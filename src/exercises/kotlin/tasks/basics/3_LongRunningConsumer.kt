@@ -1,9 +1,6 @@
 package tasks
 
-import java.time.Duration
-import java.util.*
-
-// Task_7
+// 3: Create a long running producer
 
 // Create a long-running consumer printing messages from the hello-world topic, starting at the
 // latest message. While listening, produce messages to the topic and observe that

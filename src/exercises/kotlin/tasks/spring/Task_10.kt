@@ -1,4 +1,4 @@
-package tasks
+package tasks.spring
 
 // Task_10
 

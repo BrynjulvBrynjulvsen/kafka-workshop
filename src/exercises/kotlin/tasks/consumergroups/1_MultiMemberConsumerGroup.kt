@@ -2,17 +2,14 @@ package tasks
 
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import tasks.BarebonesKafkaClients.getBareBonesConsumer
-import java.time.Duration
 import java.util.*
 
-// Task_4
-
-// Create multiple consumers for a topic with the same consumer group id.
-//  What partitions are a consumer assigned? What does this mean in terms of message consumption? (Parallelisability 🎉)
+//  Create multiple consumers for a topic with the same consumer group id.
+//  What partitions are a consumer assigned? What does this mean in terms of message consumption?
 //  Notice that they're each assigned a sub-set of the partitions for the topic, and that this allows for
 //  horizontal scalability not only broker/server- but also client-side.
 //  When consuming messages, make sure you commit your offsets. Consider what happens if this is not done.
+
 fun main() {
     val uniqueConsumerGroup = "quick-readers-association-${UUID.randomUUID()}"
     val consumers: List<KafkaConsumer<String, String>> = listOf(  )

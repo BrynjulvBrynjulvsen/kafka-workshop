@@ -13,18 +13,14 @@ import java.util.*
 
 object BarebonesKafkaClients {
 
-    private const val BOOTSTRAP_SERVER_URL = "kafka-workshop-001-kafka-workshop.aivencloud.com:13816"
-    private const val SCHEMA_REGISTRY_URL = "https://kafka-workshop-001-kafka-workshop.aivencloud.com:13806"
+    private const val BOOTSTRAP_SERVER_URL = "localhost:9094"
+    private const val SCHEMA_REGISTRY_URL = "http://localhost:8085"
 
     fun sharedProps(): Map<String, String> {
         return mapOf(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to BOOTSTRAP_SERVER_URL,
-            CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "SASL_SSL",
-            SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE to "USER_INFO",
-            SchemaRegistryClientConfig.USER_INFO_CONFIG to "$username:$password",
+            CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "PLAINTEXT",
             AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to SCHEMA_REGISTRY_URL,
-            SaslConfigs.SASL_MECHANISM to "SCRAM-SHA-256",
-            SaslConfigs.SASL_JAAS_CONFIG to "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"$username\" password=\"$password\";",
         )
     }
 

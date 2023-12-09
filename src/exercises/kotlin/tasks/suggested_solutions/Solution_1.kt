@@ -13,8 +13,8 @@ fun main() {
         producer.send(
             ProducerRecord(
                 Constants.TOPIC_NAME,
-                "isabel-key",
-                "Log compaction? 👀"
+                "my-key",
+                "My first message!"
             )
         )
 
