@@ -13,7 +13,7 @@ If you want to try your hand at implementing usage of Kafka in a major framework
 
 ## Setup
 Before we get started, there are a few necessary introductory steps:
-* Create your Kafka cluster by executing `docker compose up` from kafka-cluster folder
+* Create your Kafka cluster by executing `docker compose up`
 * Once the cluster is up and running, execute the [setup script](exercise_setup/create_topics.sh) to set up topics used in exercises
 
 ## Topics
