@@ -9,10 +9,10 @@ import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import tasks.BarebonesKafkaClients
 
-// Task_9
+// Ordering and keys
 
 // Create a set of three consumers groups with at least two members each, and listen to a topic with multiple partitions.
-// With all three consumer groups running, produce two series of messages. Ensure that each message belonging to each
+// With all three consumer groups running, produce two series of messages. Use keys to ensure that each message belonging to each
 // series is consumed in order by each consumer group.
 
 // Note that some time might pass before consumers begin receiving messages. This happens because Kafka needs to finish

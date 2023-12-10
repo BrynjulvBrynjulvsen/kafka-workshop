@@ -1,19 +1,25 @@
 package io.bekk.controller
 
+import io.bekk.producer.WorkshopKafkaProducer
 import io.bekk.repository.WorkshopStatusMessageConsumerRecord
 import io.bekk.repository.ConsumerRecordWithStringValue
 import io.bekk.repository.FeedRepository
+import org.apache.avro.generic.GenericRecord
+import org.apache.avro.generic.GenericRecordBuilder
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RestController
+import java.util.*
 
 @RestController
 class WorkshopFeedController(
-    val feedRepository: FeedRepository
+    val feedRepository: FeedRepository,
+    val producer: WorkshopKafkaProducer
 ) {
 
-    @CrossOrigin(origins = ["*"])
     @GetMapping("/status-feed/")
     fun getStatusFeed(): ResponseEntity<WorkshopStatusMessageConsumerRecordList> {
         return ResponseEntity.ok(
@@ -21,7 +27,6 @@ class WorkshopFeedController(
         )
     }
 
-    @CrossOrigin(origins = ["*"])
     @GetMapping("/hello-world-feed/")
     fun getHelloWorldFeed(): ResponseEntity<ConsumerRecordWithStringValueList> {
         return ResponseEntity.ok(
@@ -29,25 +34,15 @@ class WorkshopFeedController(
         )
     }
 
-//    ---- OUT OF SCOPE -------
-//    @GetMapping("/consumer-records/{topic}")
-//    fun getConsumerRecordsForTopic(
-//        @PathVariable(value = "topic")
-//        topic: String
-//    ): ResponseEntity<ConsumerRecordWithStringValueList> {
-//        return ResponseEntity.ok(
-//            ConsumerRecordWithStringValueList(feedRepository.getAllRecords(topic))
-//        )
-//    }
+    @PutMapping("/hello-world/{message}")
+    fun putHelloWorldFeed(@PathVariable message: String): ResponseEntity<String> {
+        producer.send("hello-world", UUID.randomUUID().toString(), message)
+        return ResponseEntity.ok("Posted")
+    }
 
-// Optional:
-//    fun getAllNewMessagesForTopic()
-//    fun streamMessageFeed()
 }
 
-//data class ConsumerRecordWithStringValueList(
-//    val recordList: List<ConsumerRecordWithStringValue>
-//)
+
 
 data class WorkshopStatusMessageConsumerRecordList(
     val recordList: List<WorkshopStatusMessageConsumerRecord>

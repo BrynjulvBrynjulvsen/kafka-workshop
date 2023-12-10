@@ -39,5 +39,5 @@ consumed in the same order as they were written.
 > identifiers; rather, they indicate that something is contextually related. In some usages identical keys *may* indicate
 > a superseding version of a resource (particularly when using the log compaction cleanup policy), but this is not required.
 
-## Code exercises
-
+## Code exercise
+[Implement](../src/exercises/kotlin/tasks/partitions/1_keys_and_ordering.kt) and demonstrate ordered consumption of a topic.

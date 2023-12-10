@@ -20,16 +20,14 @@ fun main() {
 
     runBlocking(Dispatchers.IO) {
         val myGroup = "task-9-group"
-        val consumers = listOf(
+        listOf(
             BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-1", offsetConfig = "latest"),
             BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-1", offsetConfig = "latest"),
             BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-2", offsetConfig = "latest"),
             BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-2", offsetConfig = "latest"),
             BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-3", offsetConfig = "latest"),
             BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-3", offsetConfig = "latest")
-        )
-
-        consumers.forEach {  consumer ->
+        ).forEach {  consumer ->
             launch {
                 consumer.subscribe(listOf(Constants.PARTITIONED_TOPIC))
                 while (true) {

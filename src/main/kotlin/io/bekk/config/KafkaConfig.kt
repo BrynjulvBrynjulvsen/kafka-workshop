@@ -52,11 +52,6 @@ class KafkaConfig(val context: ApplicationContext, val props: KafkaProps) {
         KafkaTemplate(stringProducerFactory())
 
     @Bean
-    fun <T : SpecificRecordBase> kafkaProducer(): WorkshopKafkaProducer<T> =
-        WorkshopKafkaProducer(kafkaTemplate())
-
-
-    @Bean
     fun stringConsumerFactory(): ConsumerFactory<String, String> =
         DefaultKafkaConsumerFactory(
             serverProps(props) + commonProps() +

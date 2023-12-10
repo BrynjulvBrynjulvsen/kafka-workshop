@@ -20,14 +20,14 @@ buildscript {
 }
 
 plugins {
-    id("org.springframework.boot") version "2.7.2"
-    id("io.spring.dependency-management") version "1.0.11.RELEASE"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.7.10"
-    id("com.github.davidmc24.gradle.plugin.avro") version "1.3.0"
+    id("org.springframework.boot") version "3.2.0"
+    id("io.spring.dependency-management") version "1.1.4"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.21"
+    id("com.github.davidmc24.gradle.plugin.avro") version "1.9.1"
     idea
 //    id("org.jlleitschuh.gradle.ktlint") version "10.3.0"
-    kotlin("jvm") version "1.7.10"
-    kotlin("plugin.spring") version "1.7.10"
+    kotlin("jvm") version "1.9.21"
+    kotlin("plugin.spring") version "1.9.21"
 }
 
 val jar by tasks.getting(Jar::class) {
@@ -56,10 +56,10 @@ val exercisesImplementation by configurations.getting {
 dependencies {
     implementation("org.apache.kafka:kafka-clients:$kafka_version")
     implementation("io.confluent:kafka-avro-serializer:$confluent_version")
-    implementation("org.springframework.kafka:spring-kafka:2.9.1")
+    implementation("org.springframework.kafka:spring-kafka:3.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
     implementation("org.apache.avro:avro:1.11.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -70,11 +70,13 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 }
 
+java.sourceCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_17
+
 val compileKotlin: KotlinCompile by tasks
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
-        freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.time.ExperimentalTime"
-        freeCompilerArgs = freeCompilerArgs + "-opt-in=kotlin.ExperimentalStdlibApi"
+        jvmTarget = "17"
     }
 }
 

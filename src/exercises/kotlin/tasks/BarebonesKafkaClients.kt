@@ -64,7 +64,7 @@ object BarebonesKafkaClients {
                 KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG to "true",
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to "org.apache.kafka.common.serialization.StringDeserializer",
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to "io.confluent.kafka.serializers.KafkaAvroDeserializer",
-                ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG to "2000"
+                ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG to "6000"
             )
         )
 
