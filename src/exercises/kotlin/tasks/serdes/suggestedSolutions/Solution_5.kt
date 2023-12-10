@@ -18,7 +18,6 @@ fun main() {
                 Constants.AVRO_TOPIC_NAME,
                 UUID.randomUUID().toString(),
                  WorkshopStatusMessage("Currently at a #KafkaWorkshop 🎉 held by @Bekk 🕴")
-//                WorkshopStatusMessage("Yes indeed! 👀")
             )
         )
     }

@@ -1,7 +1,8 @@
-package tasks
+package tasks.consumergroups
 
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
+import tasks.Constants
 import java.util.*
 
 //  Create multiple consumers for a topic with the same consumer group id.
@@ -11,7 +12,7 @@ import java.util.*
 //  When consuming messages, make sure you commit your offsets. Consider what happens if this is not done.
 
 fun main() {
-    val uniqueConsumerGroup = "quick-readers-association-${UUID.randomUUID()}"
+    val uniqueConsumerGroup = "multi-member-group-${UUID.randomUUID()}"
     val consumers: List<KafkaConsumer<String, String>> = listOf(  )
 
     consumers.forEach { it.subscribe(listOf(Constants.TOPIC_NAME)) }  // Join the same group, enabling partition balancing, offset handling and other Kafka consumer group features

@@ -1,6 +1,7 @@
-package tasks
+package tasks.serdes
 
 import io.bekk.publisher.WorkshopStatusMessage
+import tasks.BarebonesKafkaClients
 
 // Task_5
 

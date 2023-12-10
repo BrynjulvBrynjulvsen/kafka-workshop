@@ -1,4 +1,4 @@
-package tasks.suggested_solutions
+package tasks.consumergroups.suggestedSolutions
 
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import tasks.BarebonesKafkaClients.getBareBonesConsumer
@@ -6,7 +6,6 @@ import tasks.Constants
 import java.time.Duration
 import java.util.*
 
-// Task_4
 
 // Create multiple consumers for a topic with the same consumer group id.
 //  What partitions are a consumer assigned? What does this mean in terms of message consumption?
@@ -14,7 +13,7 @@ import java.util.*
 //  horizontal scalability not only broker/server- but also client-side.
 //  When consuming messages, make sure you commit your offsets. Consider what happens if this is not done.
 fun main() {
-    val uniqueConsumerGroup = "quick-readers-association-${UUID.randomUUID()}"
+    val uniqueConsumerGroup = "multi-member-group-${UUID.randomUUID()}"
     val consumers = listOf(
         getBareBonesConsumer(groupId = uniqueConsumerGroup, offsetConfig = "earliest"),
         getBareBonesConsumer(groupId = uniqueConsumerGroup, offsetConfig = "earliest"),
@@ -30,7 +29,7 @@ fun main() {
 
     }
 
-    // Optional: Re-use an already-existing consumer-group, such as "quick-readers-association", and read all messages
+    // Optional: Re-use an already-existing consumer-group, and read all messages
     //  Hint: Even though we started reading from offset 0, the current value will be that of the last consumed message
     //      for each partition..
     consumers.forEachIndexed { cIdx, consumer ->

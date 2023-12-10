@@ -12,8 +12,6 @@ import org.apache.kafka.common.config.SaslConfigs
 import java.time.Duration
 
 val bootstrapUrl = "<your-bootstrap-server-url>"
-val kafkaUsername = "<your-username>"
-val kafkaPassword = "<your-password>"
 val schemaRegistryUrl = "https://<your-schema-registry-url>"
 
 fun `produce a basic message`() {
@@ -21,9 +19,7 @@ fun `produce a basic message`() {
     val producer = KafkaProducer<String, String>(
         mapOf(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapUrl,
-            CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "SASL_SSL",
-            SaslConfigs.SASL_MECHANISM to "SCRAM-SHA-256",
-            SaslConfigs.SASL_JAAS_CONFIG to "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"$kafkaUsername\" password=\"$kafkaPassword\";",
+            CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "PLAINTEXT",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to "org.apache.kafka.common.serialization.StringSerializer",
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to "org.apache.kafka.common.serialization.StringSerializer"
         )
@@ -42,12 +38,8 @@ fun `consume a basic topic from start`() {
     val consumer = KafkaConsumer<String, String>(
         mapOf(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapUrl,
-            CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "SASL_SSL",
-            SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE to "USER_INFO",
-            SchemaRegistryClientConfig.USER_INFO_CONFIG to "$kafkaUsername:$kafkaPassword",
+            CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "PLAINTEXT",
             AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to schemaRegistryUrl,
-            SaslConfigs.SASL_MECHANISM to "SCRAM-SHA-256",
-            SaslConfigs.SASL_JAAS_CONFIG to "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"$kafkaUsername\" password=\"$kafkaPassword\";",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to "org.apache.kafka.common.serialization.StringDeserializer",
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to "org.apache.kafka.common.serialization.StringDeserializer",
             ConsumerConfig.GROUP_ID_CONFIG to "my-group-id", // Which consumer group to join. If this already exist,

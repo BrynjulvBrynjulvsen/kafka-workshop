@@ -32,11 +32,6 @@ fun readQueueFromStart() {
                     println("Record value: ${consumerRecord.value()}")
                 }
             }
-            //consumer.commitSync()
-
-            // iff log compaction has been run:
-            //  assert(consumerRecords.toList().size == 1)
-            //  assert(consumerRecords.last().value() == latest)
         }
 }
 fun produceMessages() {
@@ -45,7 +40,7 @@ fun produceMessages() {
             producer.send(
                 ProducerRecord(
                     "hello-world",
-                    "the-same-key",
+                    null,
                     msg
                 )
             )
