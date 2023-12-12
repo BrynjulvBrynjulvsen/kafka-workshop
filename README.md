@@ -23,4 +23,5 @@ Once setup is complete, find the exercises and further instructions here:
 3. [Partitions and ordering](exercises/3_partitions_and_ordering.md)
 4. [Schemas and serialization/deserialization](exercises/4_schemas_and_serdes.md)
 5. [Deletion policy and log compaction](exercises/5_deletion_policy.md)
-6. [Spring Kafka using Spring Boot](exercises/6_spring_boot.md)
+6. [Kafka connect](exercises/6_kafka_connect.md)
+7. [Spring Kafka using Spring Boot](exercises/7_spring_boot.md)

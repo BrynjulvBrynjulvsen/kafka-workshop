@@ -31,6 +31,7 @@ services:
 
   schemaregistry:
     image: confluentinc/cp-schema-registry:7.5.2
+    hostname: schemaregistry
     container_name: schemaregistry
     restart: always
     depends_on:
@@ -45,5 +46,80 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
 
+  kafkaconnect:
+    image: confluentinc/cp-kafka-connect:7.4.3
+    restart: always
+    hostname: kafkaconnect
+    container_name: kafkaconnect
+    ports:
+      - "8083:8083"
+    volumes:
+      - kc-data:/data
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka1:9092
+      CONNECT_GROUP_ID: "kafka-connect"
+      CONNECT_CONFIG_STORAGE_TOPIC: "_kafka-connect-configs"
+      CONNECT_OFFSET_STORAGE_TOPIC: "_kafka-connect-offsets"
+      CONNECT_STATUS_STORAGE_TOPIC: "_kafka-connect-status"
+      CONNECT_REPLICATION_FACTOR: 1
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+
+      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schemaregistry:8085"
+
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafkaconnect"
+      CONNECT_LISTENERS: http://kafkaconnect:8083
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+
+      # Connect worker
+      CONNECT_SECURITY_PROTOCOL: PLAINTEXT
+
+      # Connect producer
+      CONNECT_PRODUCER_SECURITY_PROTOCOL: PLAINTEXT
+
+      # Connect consumer
+      CONNECT_CONSUMER_SECURITY_PROTOCOL: PLAINTEXT
+
+    depends_on:
+      - kafka1
+      - schemaregistry
+      - postgres
+    networks:
+      - kafkaworkshop
+
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing Connector"
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.7.0
+        #
+        echo "Launching Kafka Connect worker" 
+        /etc/confluent/docker/run &
+        #
+        sleep infinity
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    hostname: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=user
+      - POSTGRES_DB=workshop
+
+    networks:
+      - kafkaworkshop
+
 volumes:
   kafka1-data:
+  kc-data:
+  postgres-data:
