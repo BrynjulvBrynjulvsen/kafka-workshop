@@ -29,7 +29,7 @@ Choose a topic with multiple partitions. `partitioned-topic` should already exis
 * Examine the group using the `kafka-consumer-groups` tool. Notice that the partitions have been divided
 * Produce a number of records to the topic. Observe that each record is received once, but potentially by different consumers.
 
-> Try using different keys to get your messages assigned to different partitions. `kafka-console-producer.sh --bootstrap-server kafka1:9092 --topic partitioned-topic --property "parse.key=true" --property "key.separator=:"`
+> Try using different keys to get your messages assigned to different partitions. `kafka-console-producer --bootstrap-server kafka1:9092 --topic partitioned-topic --property "parse.key=true" --property "key.separator=:"`
 > lets you specify keys on the form of `key:value`
 
 ## Ordering and keys 
