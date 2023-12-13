@@ -47,7 +47,7 @@ the previous step appears, as well as (potentially) any other groups you might h
 
 <details>
 
->`kafka-consumer-groups --bootstrap-server kafka1:9092 --describe --group my-group`
+>`kafka-consumer-groups --bootstrap-server kafka1:9092 --list`
 </details>
 
 >**Notice that no topic names are output from this command. It is relatively easy to look up
