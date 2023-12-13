@@ -73,3 +73,17 @@ curl -X POST localhost:8085/subjects/schema-using-topic-value/versions \
 -d '{ "schema":"{\"type\":\"record\",\"name\":\"WorkshopStatusMessage\",\"namespace\":\"io.bekk.publisher\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"likes\",\"type\":[\"null\",\"string\"],\"default\":null}]}", "schemaType": "AVRO"}'
 ```
 </details>
+
+## Console tools
+While some distributions come with tools for reading/writing Avro records using the schema registry (unlike the regular
+`kafka-console-*` tools), many do not. A powerful, freely available command-line tool that fills this niche is `kcat`. Most
+package managers, such as apt-get or homebrew, have packages for this tool.
+
+### Exercise
+Try reading and writing to `schema-using-topic` using the `kcat` tool.
+
+#### Example
+<details>
+
+`kcat -C -b localhost:9094 -t schema-using-topic -r localhost:8085 -s value=avro -e`
+</details>
