@@ -44,6 +44,7 @@ object BarebonesKafkaClients {
                         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to "org.apache.kafka.common.serialization.StringDeserializer",
                         ConsumerConfig.GROUP_ID_CONFIG to groupId,
                         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to offsetConfig,
+                        ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "false"
                     )
         )
 
