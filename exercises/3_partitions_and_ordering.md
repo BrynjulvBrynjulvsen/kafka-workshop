@@ -29,13 +29,16 @@ Choose a topic with multiple partitions. `partitioned-topic` should already exis
 * Examine the group using the `kafka-consumer-groups` tool. Notice that the partitions have been divided
 * Produce a number of records to the topic. Observe that each record is received once, but potentially by different consumers.
 
+> Try using different keys to get your messages assigned to different partitions. `kafka-console-producer.sh --broker-list localhost:9092 --topic topic-name --property "parse.key=true" --property "key.separator=:"`
+> lets you specify keys on the form of `key:value`
+
 ## Ordering and keys 
 
 Though overridable, the default partitioning strategies make it non-obvious which discrete partition a given message will be 
 written to. Instead, it guarantees us that messages with the same *key* will be written to the same partition. This provides a way to guarantee that a subset of records will be 
 consumed in the same order as they were written.
 
-> For those coming from a rdbms-background, the concept of keys may seem confusing initially. Keys are not necessarily 
+> For those coming from a rdbms-background, the concept of keys might seem confusing initially. Keys are not necessarily 
 > identifiers; rather, they indicate that something is contextually related. In some usages identical keys *may* indicate
 > a superseding version of a resource (particularly when using the log compaction cleanup policy), but this is not required.
 
