@@ -1,6 +1,6 @@
 package tasks
 
-// 3: Create a long running producer
+// 3: Create a long-running consumer
 
 // Create a long-running consumer printing messages from the hello-world topic, starting at the
 // latest message. While listening, produce messages to the topic and observe that
