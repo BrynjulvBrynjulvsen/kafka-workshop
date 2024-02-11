@@ -5,7 +5,7 @@ import tasks.BarebonesKafkaClients
 
 // Serialization and deserialization
 
-// Produce an Avro-serialized message to the topic "schema-using-topice".
+// Produce an Avro-serialized message to the topic "schema-using-topic".
 // Then, create a consumer that consumes and deserializes messages from this topic,
 // printing some of the deserialized object's values
 

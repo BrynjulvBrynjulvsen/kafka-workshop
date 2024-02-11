@@ -5,6 +5,7 @@ import tasks.Constants
 import java.time.Duration
 
 // Task_2
+
 // Consume a message from the topic "hello-world"
 
 fun main() {
