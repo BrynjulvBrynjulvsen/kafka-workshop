@@ -56,9 +56,9 @@ val exercisesImplementation by configurations.getting {
 dependencies {
     implementation("org.apache.kafka:kafka-clients:$kafka_version")
     implementation("io.confluent:kafka-avro-serializer:$confluent_version")
-    implementation("org.springframework.kafka:spring-kafka:3.1.0")
+    implementation("org.springframework.kafka:spring-kafka:3.1.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
-    implementation("org.apache.avro:avro:1.11.0")
+    implementation("org.apache.avro:avro:1.11.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
