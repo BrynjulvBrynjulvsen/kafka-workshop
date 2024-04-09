@@ -19,7 +19,9 @@ Consumer groups have two primary functions:
 
 ## Code Exercises
 These [consumer group related exercises](../src/exercises/kotlin/tasks/consumergroups) provide a hands-on 
-introduction to the consumer group concept.
+introduction to the consumer group concept. If you're using the [barebones Kafka client](../src/exercises/kotlin/tasks/BarebonesKafkaClients.kt),
+you'll want to use the groupId-argument when getting the barebones consumer to get started.
+
 1. [Coordinating multiple members of a consumer group](../src/exercises/kotlin/tasks/consumergroups/1_MultiMemberConsumerGroup.kt)
 2. [Committing offsets](../src/exercises/kotlin/tasks/consumergroups/2_OffsetCommitting.kt)
 

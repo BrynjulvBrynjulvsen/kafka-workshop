@@ -10,8 +10,6 @@ import tasks.BarebonesKafkaClients
 import tasks.Constants
 import java.time.Duration
 
-// Task_9
-
 // Create a set of three consumer groups listening to a topic. With all three consumer groups
 // running, produce four series of messages that should be consumed in order. Ensure that each
 // series of messages are consumed in the proper order by each consumer group.

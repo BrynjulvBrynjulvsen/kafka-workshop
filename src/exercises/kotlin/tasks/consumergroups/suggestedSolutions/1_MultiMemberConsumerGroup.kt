@@ -30,8 +30,7 @@ fun main() {
     }
 
     // Optional: Re-use an already-existing consumer-group, and read all messages
-    //  Hint: Even though we started reading from offset 0, the current value will be that of the last consumed message
-    //      for each partition..
+
     consumers.forEachIndexed { cIdx, consumer ->
         println("\nPolling records for consumer #$cIdx..")
         consumer.seekToBeginning(consumer.assignment())

@@ -18,7 +18,7 @@ fun main() {
                     println("Record: topic: ${consumerRecord.topic()}, offset:${consumerRecord.offset()}")
                     println("Record value: ${consumerRecord.value()}")
                 }
-            consumer.commitAsync()
+            //consumer.commitAsync()
         }
     }
 }

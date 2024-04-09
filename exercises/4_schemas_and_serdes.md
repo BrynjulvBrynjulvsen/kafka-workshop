@@ -19,6 +19,9 @@ use Avro, as this is an efficient binary format suitable for production loads.
 [Implement](../src/exercises/kotlin/tasks/serdes/1_serialization_deserialization.kt) simple serialization and deserialization
 of Avro messages. Feel free to use this [schema](../src/main/avro/WorkshopStatusMessage.avsc), or create your own in this directory
 
+> When using the BarebonesKafkaClients, try using the getAvroConsumer/getAvroProducer functions to get started
+
+
 > This workshop generates Java classes using the [gradle avro plugin](https://github.com/davidmc24/gradle-avro-plugin). 
 > Its default location for schema files is src/main/avro. The plugin provides a generateAvroJava task, which places
 > generated classes under `build/generated-main-avro-java`. If you modify or add your own schemas, run the generateAvroJava

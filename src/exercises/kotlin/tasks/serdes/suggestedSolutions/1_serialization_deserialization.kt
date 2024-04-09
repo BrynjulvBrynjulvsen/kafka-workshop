@@ -15,27 +15,27 @@ import java.util.*
 // Then, create a consumer that consumes and deserializes messages from this topic,
 // printing some of the deserialized object's values
 fun main() {
-    runBlocking(Dispatchers.IO) {
-        BarebonesKafkaClients.getAvroProducer<WorkshopStatusMessage>().use { producer ->
-            producer.send(
-                ProducerRecord(
-                    Constants.AVRO_TOPIC_NAME,
-                    UUID.randomUUID().toString(),
-                     WorkshopStatusMessage("A wonderful Avro message!")
-                )
+
+    BarebonesKafkaClients.getAvroProducer<WorkshopStatusMessage>().use { producer ->
+        producer.send(
+            ProducerRecord(
+                Constants.AVRO_TOPIC_NAME,
+                UUID.randomUUID().toString(),
+                 WorkshopStatusMessage("A wonderful Avro message!")
             )
+        )
+    }
+
+    BarebonesKafkaClients.getAvroConsumer<WorkshopStatusMessage>()
+        .use { consumer ->
+            consumer.subscribe(listOf(Constants.AVRO_TOPIC_NAME))
+            while (true) {
+                val records = consumer.poll(Duration.ofMillis(1000L))
+                records.forEach {
+                    println("Record value: ${it.value()}")
+                }
+                consumer.commitAsync()
+            }
         }
 
-        BarebonesKafkaClients.getAvroConsumer<WorkshopStatusMessage>()
-            .use { consumer ->
-                consumer.subscribe(listOf(Constants.AVRO_TOPIC_NAME))
-                while (true) {
-                    val records = consumer.poll(Duration.ofMillis(1000L))
-                    records.forEach {
-                        println("Record value: ${it.value()}")
-                    }
-                    consumer.commitAsync()
-                }
-            }
-    }
 }

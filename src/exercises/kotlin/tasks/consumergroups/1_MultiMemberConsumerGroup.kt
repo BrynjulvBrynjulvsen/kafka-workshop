@@ -12,7 +12,7 @@ import java.util.*
 //  When consuming messages, make sure you commit your offsets. Consider what happens if this is not done.
 
 fun main() {
-    val uniqueConsumerGroup = "multi-member-group-${UUID.randomUUID()}"
+    val uniqueConsumerGroup = "Fmulti-member-group-${UUID.randomUUID()}"
     val consumers: List<KafkaConsumer<String, String>> = listOf(  )
 
     consumers.forEach { it.subscribe(listOf(Constants.TOPIC_NAME)) }  // Join the same group, enabling partition balancing, offset handling and other Kafka consumer group features
@@ -22,9 +22,9 @@ fun main() {
         println("\nPolling records for consumer #$cIdx..")
     }
 
-    // Optional: Re-use an already-existing consumer-group, such as "quick-readers-association", and read all messages
-    //  Hint: Even though we started reading from offset 0, the current value will be that of the last consumed message
-    //      for each partition..
+    // Optional: Re-use an already-existing consumer-group, and read all messages from the beginning again
+    // Explore the seek methods provided by the consumer-object. You'll need to explicitly seek to the beginning
+    // for the consumer's assigned partitions. See consumer.assignment() to get these.
     consumers.forEachIndexed { cIdx, consumer ->
         // TODO: Implement me
         println("\nSeeking to the beginning of the queue, i.e. the first offsets #$cIdx..")
