@@ -1,27 +1,21 @@
 package tasks
 
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import kotlinx.coroutines.*
-import kotlinx.coroutines.GlobalScope.coroutineContext
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.config.SaslConfigs
-import tasks.suggested_solutions.produceMessage
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalUnit
 import java.util.*
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.suspendCoroutine
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.toJavaDuration
 
 object BarebonesKafkaClients {
 
@@ -68,7 +62,7 @@ object BarebonesKafkaClients {
             )
         )
 
-    fun <V> getAvroConsumer(offsetConfig: String = "earliest",groupId: String = "random-group-${UUID.randomUUID()}"):
+    fun <V> getAvroConsumer(offsetConfig: String = "earliest", groupId: String = "random-group-${UUID.randomUUID()}"):
             KafkaConsumer<String, V> =
         KafkaConsumer<String, V>(
             sharedProps() + mapOf(
@@ -83,30 +77,34 @@ object BarebonesKafkaClients {
 
 }
 
-class ContinuousProducer(private val topicName: String) {
+class ContinuousProducer(private val topicName: String, private val messageProducer: () -> Pair<String, String>)  {
 
-    private val stopRendezvous: Channel<Unit> = Channel(0)
+    private val pauseRendezvous: Channel<Unit> = Channel(0)
     private val startRendezvous: Channel<Unit> = Channel(0)
 
     val producer = BarebonesKafkaClients.getBareBonesProducer()
 
     init {
-        CoroutineScope(Job()).launch(Dispatchers.Default) {
+        CoroutineScope(Job()).launch(Dispatchers.IO) {
             startProducer()
         }
     }
 
     private suspend fun startProducer() {
-        startRendezvous.receive()
-        while (stopRendezvous.tryReceive().isFailure) {
-            producer.send(
-                ProducerRecord(
-                    topicName,
-                    UUID.randomUUID().toString(),
-                    "Message sent at ${OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)}"
+        while (true) {
+            startRendezvous.receive()
+            while (pauseRendezvous.tryReceive().isFailure) {
+                producer.send(
+                    messageProducer().let {
+                    ProducerRecord(
+                        topicName,
+                        it.first,
+                        it.second
+                    )
+                    }
                 )
-            )
-            delay(100)
+                delay(100)
+            }
         }
     }
 
@@ -117,6 +115,52 @@ class ContinuousProducer(private val topicName: String) {
     }
 
     fun stop() {
-        runBlocking { stopRendezvous.send(Unit) }
+        runBlocking { pauseRendezvous.send(Unit) }
     }
+}
+
+class BasicConsumer(
+    groupId: String,
+    private val topicName: String,
+    offsetResetConfig: String = "latest",
+    private val consumeFunction: (ConsumerRecord<String, String>, KafkaConsumer<String, String>) -> Unit
+) {
+
+    val consumer = BarebonesKafkaClients.getBareBonesConsumer(groupId = groupId, offsetConfig = offsetResetConfig)
+    private val pauseRendezvous: Channel<Unit> = Channel(0)
+    private val resumeRendezvous: Channel<Unit> = Channel(0)
+
+    init {
+        CoroutineScope(Job()).launch(Dispatchers.IO) {
+            startConsumer()
+        }
+    }
+
+    private suspend fun startConsumer() {
+        while (true) {
+            consumer.subscribe(listOf(topicName))
+            while (pauseRendezvous.tryReceive().isFailure) {
+                consumer.poll(1000.milliseconds.toJavaDuration()).forEach {
+                    consumeFunction(it, consumer)
+                }
+            }
+            resumeRendezvous.receive()
+        }
+    }
+
+    fun resume() {
+        runBlocking {
+            resumeRendezvous.send(Unit)
+        }
+    }
+
+    fun stop() {
+        runBlocking { pauseRendezvous.send(Unit) }
+    }
+
+    fun close() {
+        stop()
+        consumer.close()
+    }
+
 }

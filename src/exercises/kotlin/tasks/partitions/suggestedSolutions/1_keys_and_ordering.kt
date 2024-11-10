@@ -1,4 +1,4 @@
-package tasks.suggested_solutions
+package tasks.partitions.suggestedSolutions
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import tasks.BarebonesKafkaClients
+import tasks.BasicConsumer
 import tasks.Constants
 import java.time.Duration
 
@@ -22,44 +23,37 @@ import java.time.Duration
 // and verify that it is in a rebalancing state.
 
 fun main() {
+    val myGroup = "task-9-group"
 
-    runBlocking(Dispatchers.IO) {
-        val myGroup = "task-9-group"
-        listOf(
-            BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-1", offsetConfig = "latest"),
-            BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-1", offsetConfig = "latest"),
-            BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-2", offsetConfig = "latest"),
-            BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-2", offsetConfig = "latest"),
-            BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-3", offsetConfig = "latest"),
-            BarebonesKafkaClients.getBareBonesConsumer(groupId = "$myGroup-3", offsetConfig = "latest")
-        ).forEach {  consumer ->
-            launch {
-                consumer.subscribe(listOf(Constants.PARTITIONED_TOPIC))
-                while (true) {
-                    consumer.poll(Duration.ofMillis(100L)).forEach { record ->
-                        println("Group: ${consumer.groupMetadata().groupId()} Partition: ${record.partition()} Key: ${record.key()} Value: ${record.value()}")
-                    }
-                    consumer.commitSync()
-                    delay(5)
-                }
-            }
+    val consumers = listOf("1", "2", "3").map {
+        BasicConsumer(
+            groupId = "$myGroup-$it",
+            topicName = Constants.PARTITIONED_TOPIC,
+            offsetResetConfig = "latest"
+        ) { record, consumer ->
+            println(
+                "Group: ${
+                    consumer.groupMetadata().groupId()
+                } Partition: ${record.partition()} Offset: ${record.offset()} Key: ${record.key()} Value: ${record.value()}"
+            )
         }
-
-        launch {
-            delay(1000)
-            println("Producing...")
-            BarebonesKafkaClients.getBareBonesProducer().use { producer ->
-                val values = listOf("First", "Second", "Third")
-                values.forEach { producer.produceMessage(key = "first-set", value = it) }
-                values.forEach { producer.produceMessage(key = "second-set", value = it) }
-                values.forEach { producer.produceMessage(key = "third-set", value = it) }
-                values.forEach { producer.produceMessage(key = "fourth-set", value = it) }
-            }
-            println("Done producing")
-        }
-
     }
 
+    Thread.sleep(5000L)
+    println("Producing...")
+    BarebonesKafkaClients.getBareBonesProducer().use { producer ->
+        val values = listOf("First", "Second", "Third")
+        values.forEach { producer.produceMessage(key = "first-set", value = it) }
+        values.forEach { producer.produceMessage(key = "second-set", value = it) }
+        values.forEach { producer.produceMessage(key = "third-set", value = it) }
+        values.forEach { producer.produceMessage(key = "fourth-set", value = it) }
+        producer.flush()
+    }
+    println("Done producing")
+    println("Waiting")
+    Thread.sleep(1000L)
+    // Not closing means dead consumers Kafka will have to wait for upon next rebalance
+    consumers.forEach { it.close() }
 }
 
 fun KafkaProducer<String, String>.produceMessage(key: String, value: String) {

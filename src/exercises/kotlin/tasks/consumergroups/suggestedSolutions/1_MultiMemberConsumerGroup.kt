@@ -4,12 +4,12 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import tasks.BarebonesKafkaClients.getBareBonesConsumer
 import tasks.Constants
 import tasks.ContinuousProducer
-import tasks.doForDuration
+import tasks.repeatFor
 import java.time.Duration
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.*
-import kotlin.concurrent.timer
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeSource
 
 
 // Create multiple consumers for a topic with the same consumer group id.
@@ -26,10 +26,12 @@ fun main() {
 
 
 
-    val continuousProducer = ContinuousProducer(Constants.PARTITIONED_TOPIC)
+    val continuousProducer = ContinuousProducer(Constants.PARTITIONED_TOPIC) {
+        UUID.randomUUID().toString() to "Message sent at ${OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)}"
+    }
     continuousProducer.resume()
 
-    doForDuration(10.seconds) {
+    repeatFor(10.seconds) {
         consumers.forEachIndexed { cIdx, consumer ->
             println("\nPolling records for consumer #$cIdx..")
             pollAndPrintRecords(consumer)

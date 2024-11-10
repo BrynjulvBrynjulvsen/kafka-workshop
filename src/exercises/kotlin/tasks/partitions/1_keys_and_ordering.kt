@@ -26,6 +26,8 @@ fun main() {
    runBlocking(Dispatchers.IO) {
         val consumers: List<KafkaConsumer<String, String>>  = TODO("implement me")
        consumers.forEach { consumer ->
+
+           // launch starts a coroutine job. Think of this as a lightweight virtual thread.
            launch {
                while(true) {
                    //TODO: Consume and print records. To make it easier to see which is which, consider including keys and partition numbers.

@@ -3,10 +3,9 @@ package tasks.consumergroups
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import tasks.Constants
-import tasks.doForDuration
+import tasks.repeatFor
 import java.util.*
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeSource
 
 // Create multiple consumers for a topic with the same consumer group id.
 // How may consumers are receiving messages? What does this mean in terms of message consumption?
@@ -18,12 +17,12 @@ fun main() {
     // Join the same group, enabling partition balancing, offset handling and other Kafka consumer group features
     consumers.forEach { it.subscribe(listOf(Constants.TOPIC_NAME)) }
 
-    // If you do not have sufficient messages on your topic yet, try producing some first.
-    // Alternatively, try using the ContinuousProducer utility found in BareBonesKafkaClients to produce in the background
-
     // Joining a consumer group triggers rebalancing, which may take some time. Therefore, try running this in a loop.
     // If you're interested in how rebalancing works, examine what happens if you reduce this timer
-    doForDuration(10.seconds) {
+
+    repeatFor(10.seconds) {
+        // You may end up consuming most or all messages before all consumers finish joining, so you may wish
+        // to continually produce messages using the included ContinuousProducer helper class
         consumers.forEachIndexed { cIdx, consumer ->
             // TODO: Implement me
             println("\nPolling records for consumer #$cIdx..")
