@@ -3,13 +3,25 @@ package tasks
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
+import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope.coroutineContext
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.config.SaslConfigs
+import tasks.suggested_solutions.produceMessage
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalUnit
 import java.util.*
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.suspendCoroutine
 
 object BarebonesKafkaClients {
 
@@ -71,3 +83,40 @@ object BarebonesKafkaClients {
 
 }
 
+class ContinuousProducer(private val topicName: String) {
+
+    private val stopRendezvous: Channel<Unit> = Channel(0)
+    private val startRendezvous: Channel<Unit> = Channel(0)
+
+    val producer = BarebonesKafkaClients.getBareBonesProducer()
+
+    init {
+        CoroutineScope(Job()).launch(Dispatchers.Default) {
+            startProducer()
+        }
+    }
+
+    private suspend fun startProducer() {
+        startRendezvous.receive()
+        while (stopRendezvous.tryReceive().isFailure) {
+            producer.send(
+                ProducerRecord(
+                    topicName,
+                    UUID.randomUUID().toString(),
+                    "Message sent at ${OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)}"
+                )
+            )
+            delay(100)
+        }
+    }
+
+    fun resume() {
+        runBlocking {
+            startRendezvous.send(Unit)
+        }
+    }
+
+    fun stop() {
+        runBlocking { stopRendezvous.send(Unit) }
+    }
+}

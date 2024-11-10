@@ -3,12 +3,17 @@ package tasks.consumergroups.suggestedSolutions
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import tasks.BarebonesKafkaClients.getBareBonesConsumer
 import tasks.Constants
+import tasks.ContinuousProducer
+import tasks.doForDuration
 import java.time.Duration
 import java.util.*
+import kotlin.concurrent.timer
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 
 // Create multiple consumers for a topic with the same consumer group id.
-// How may consumers are receiving messages? What does this mean in terms of message consumption?
+//
 fun main() {
     val uniqueConsumerGroup = "multi-member-group-${UUID.randomUUID()}"
     val consumers = listOf(
@@ -17,18 +22,28 @@ fun main() {
         getBareBonesConsumer(groupId = uniqueConsumerGroup, offsetConfig = "earliest")
     )
 
-    consumers.forEach { it.subscribe(listOf(Constants.TOPIC_NAME)) }  // Join the same group, enabling partition balancing, offset handling and other Kafka consumer group features
-    consumers.forEachIndexed { cIdx, consumer ->
-        println("\nPolling records for consumer #$cIdx..")
+    consumers.forEach { it.subscribe(listOf(Constants.PARTITIONED_TOPIC)) }  // Join the same group, enabling partition balancing, offset handling and other Kafka consumer group features
 
-        pollAndPrintRecords(consumer)
-        println(consumer.assignment())
 
+
+    val continuousProducer = ContinuousProducer(Constants.PARTITIONED_TOPIC)
+    continuousProducer.resume()
+
+    doForDuration(10.seconds) {
+        consumers.forEachIndexed { cIdx, consumer ->
+            println("\nPolling records for consumer #$cIdx..")
+            pollAndPrintRecords(consumer)
+            println(consumer.assignment())
+        }
     }
 
-    // Optional: Re-use an already-existing consumer-group, and read all messages
-    //  Hint: Even though we started reading from offset 0, the current value will be that of the last consumed message
-    //  for each partition. Therefore, we need to make the consumers read from the beginning again.
+    continuousProducer.stop()
+
+
+    // Try re-using an already-existing consumer-group, and read all messages
+    // Recall that the poll done above may have committed some or all of the offsets.
+    // You can use consumer.seekToBeginning(consumer.assignment()) to read from the
+    // beginning of a given consumer's assigned partitions.
 
     consumers.forEachIndexed { cIdx, consumer ->
         println("\nPolling records for consumer #$cIdx..")
@@ -42,7 +57,7 @@ fun main() {
 }
 
 fun pollAndPrintRecords(consumer: KafkaConsumer<String, String>) {
-    val consumerRecords = consumer.poll(Duration.ofMillis(10000L))
+    val consumerRecords = consumer.poll(Duration.ofMillis(500L))
     println("==================== Consumer records ====================")
     consumerRecords.forEach { record ->
         println("Record: topic: ${record.topic()}, partition: ${record.partition()}, offset: ${record.offset()}")
