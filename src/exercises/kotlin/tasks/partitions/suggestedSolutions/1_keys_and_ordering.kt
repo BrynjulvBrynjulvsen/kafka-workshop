@@ -1,15 +1,10 @@
 package tasks.partitions.suggestedSolutions
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import tasks.BarebonesKafkaClients
-import tasks.BasicConsumer
+import tasks.BasicContinuousConsumer
 import tasks.Constants
-import java.time.Duration
 
 // Create a set of three consumer groups with at least two members each, and listen to a topic with multiple partitions.
 // With all three consumer groups running, produce two series of messages. Use keys to ensure that each message
@@ -26,7 +21,7 @@ fun main() {
     val myGroup = "task-9-group"
 
     val consumers = listOf("1", "2", "3").map {
-        BasicConsumer(
+        BasicContinuousConsumer(
             groupId = "$myGroup-$it",
             topicName = Constants.PARTITIONED_TOPIC,
             offsetResetConfig = "latest"

@@ -11,8 +11,6 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
-import java.time.OffsetDateTime
-import java.time.temporal.ChronoUnit
 import java.util.*
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
@@ -119,7 +117,7 @@ class ContinuousProducer(private val topicName: String, private val messageProdu
     }
 }
 
-class BasicConsumer(
+class BasicContinuousConsumer(
     groupId: String,
     private val topicName: String,
     offsetResetConfig: String = "latest",
