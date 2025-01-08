@@ -7,9 +7,6 @@ class KafkaProps {
     lateinit var bootstrapServer: String
     lateinit var securityProtocol: String
     lateinit var schemaRegistryUrl: String
-    lateinit var schemaRegistryBasicAuth: String
-    lateinit var saslUsername: String
-    lateinit var saslPassword: String
     var avroSerializableClasses: List<String> = emptyList()
     var keySerializer: String = "org.apache.kafka.common.serialization.StringSerializer"
     var keyDeserializer: String = "org.apache.kafka.common.serialization.StringDeserializer"

@@ -1,11 +1,8 @@
 app:
   kafka:
-    bootstrapServer: "kafka-workshop-001-kafka-workshop.aivencloud.com:13816"
-    securityProtocol: "SASL_SSL"
-    schemaRegistryUrl: "https://kafka-workshop-001-kafka-workshop.aivencloud.com:13806"
-    schemaRegistryBasicAuth: ${SCHEMA_REG_BASIC_AUTH}
-    saslUsername: ${SASL_USERNAME}
-    saslPassword: ${SASL_PASSWORD}
+    bootstrapServer: "localhost:9094"
+    securityProtocol: "PLAINTEXT"
+    schemaRegistryUrl: "http://localhost:8085"
     avroSerializableClasses:
       - "io.bekk.publisher.WorkshopStatusMessage"
 server:

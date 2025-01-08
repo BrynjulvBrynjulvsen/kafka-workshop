@@ -148,27 +148,17 @@ class KafkaConfig(val context: ApplicationContext, val props: KafkaProps) {
         private fun serverConfig(
             bootstrapServerUrl: String,
             schemaRegistryUrl: String,
-            schemaRegistryBasicAuth: String,
-            saslUsername: String,
-            saslPassword: String
         ): Map<String, String> =
             mapOf(
                 CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG to bootstrapServerUrl,
-                CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "SASL_SSL",
+                CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "PLAINTEXT",
                 AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to schemaRegistryUrl,
-                SaslConfigs.SASL_MECHANISM to "SCRAM-SHA-256",
-                SaslConfigs.SASL_JAAS_CONFIG to "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"$saslUsername\" password=\"$saslPassword\";",
-                SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE to "USER_INFO",
-                SchemaRegistryClientConfig.USER_INFO_CONFIG to schemaRegistryBasicAuth
             )
 
         private fun serverProps(properties: KafkaProps): Map<String, String> =
             serverConfig(
                 properties.bootstrapServer,
                 properties.schemaRegistryUrl,
-                properties.schemaRegistryBasicAuth,
-                properties.saslUsername,
-                properties.saslPassword
             )
 
     }
