@@ -109,7 +109,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres17-data:/var/lib/postgresql/data
     environment:
       - POSTGRES_PASSWORD=password
       - POSTGRES_USER=user
@@ -121,4 +121,4 @@ services:
 volumes:
   kafka1-data:
   kc-data:
-  postgres-data:
+  postgres17-data:

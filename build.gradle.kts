@@ -28,6 +28,11 @@ plugins {
 //    id("org.jlleitschuh.gradle.ktlint") version "10.3.0"
     kotlin("jvm") version "1.9.21"
     kotlin("plugin.spring") version "1.9.21"
+    application
+}
+
+application {
+    mainClass.value("_1_MultiMemberConsumerGroupKt")
 }
 
 val jar by tasks.getting(Jar::class) {
@@ -53,12 +58,14 @@ val exercisesImplementation by configurations.getting {
     extendsFrom(configurations.implementation.get())
 }
 
+
+
 dependencies {
     implementation("org.apache.kafka:kafka-clients:$kafka_version")
     implementation("io.confluent:kafka-avro-serializer:$confluent_version")
-    implementation("org.springframework.kafka:spring-kafka:3.1.3")
+    implementation("org.springframework.kafka:spring-kafka:3.3.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
-    implementation("org.apache.avro:avro:1.11.3")
+    implementation("org.apache.avro:avro:1.11.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
