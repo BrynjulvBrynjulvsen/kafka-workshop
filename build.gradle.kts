@@ -61,6 +61,7 @@ val exercisesImplementation by configurations.getting {
 
 
 dependencies {
+    implementation(kotlin("stdlib"))
     implementation("org.apache.kafka:kafka-clients:$kafka_version")
     implementation("io.confluent:kafka-avro-serializer:$confluent_version")
     implementation("org.springframework.kafka:spring-kafka:3.3.1")
@@ -96,4 +97,13 @@ sourceSets {
         val main by getting
         main.java.srcDir("${serverOutputDir.get()}/src/main/kotlin")
     }
+}
+
+
+tasks.register<JavaExec>("runKotlinClass") {
+    dependsOn("compileKotlin")
+    group = "application"
+    description = "Runs a specified Kotlin class"
+    classpath = sourceSets["exercises"].runtimeClasspath
+    mainClass.set(project.findProperty("mainClass") as String?)
 }

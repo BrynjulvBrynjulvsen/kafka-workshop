@@ -8,7 +8,12 @@ If you want to try your hand at implementing usage of Kafka in a major framework
 ## Prerequisites
 * docker
   * alternatively, a locally installed and configured Kafka + schema registry
-* An IDE capable of using Gradle and Kotlin
+* Strongly recommended: An IDE capable of using Gradle and Kotlin
+  * A runKotlinClass Gradle task is provided as a fallback
+    * <details>
+
+      >For example, `./gradlew runKotlinClass -PmainClass=tasks.suggested_solutions._2_CreateConsumerKt`
+      </details>
 * Bash
 
 ## Setup
