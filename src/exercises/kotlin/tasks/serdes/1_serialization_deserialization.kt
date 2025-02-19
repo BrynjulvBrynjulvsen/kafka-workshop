@@ -1,6 +1,9 @@
 package tasks.serdes
 
 import io.bekk.publisher.WorkshopStatusMessage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import tasks.BarebonesKafkaClients
 
 // Serialization and deserialization
@@ -10,13 +13,17 @@ import tasks.BarebonesKafkaClients
 // printing some of the deserialized object's values
 
 fun main() {
-
-    BarebonesKafkaClients.getAvroProducer<WorkshopStatusMessage>().use { producer ->
-        // TODO: Implement me
-    }
-
-    BarebonesKafkaClients.getAvroConsumer<WorkshopStatusMessage>()
-        .use { consumer ->
-            // TODO: Implement me
+    runBlocking(Dispatchers.IO) {
+        launch {
+            BarebonesKafkaClients.getAvroProducer<WorkshopStatusMessage>().use { producer ->
+                // TODO: Implement me
+            }
         }
+        launch {
+            BarebonesKafkaClients.getAvroConsumer<WorkshopStatusMessage>()
+                .use { consumer ->
+                    // TODO: Implement me
+                }
+        }
+    }
 }
