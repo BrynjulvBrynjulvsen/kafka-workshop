@@ -11,6 +11,12 @@ Content-Type: application/json
     "connection.user": "user",
     "connection.password": "password",
     "auto.create": "true",
+    "auto.evolve": "true",
+    "insert.mode": "upsert",
+    "pk.mode": "record_key",
+    "pk.fields": "key",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schemaregistry:8085",
     "name": "jdbc-sink"
   }
 }
