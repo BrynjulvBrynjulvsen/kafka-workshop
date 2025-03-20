@@ -17,10 +17,10 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093'
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-      KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry:8085"
+      KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry1:8085"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      CLUSTER_ID: KUQll_wsRdWF7yPPb85xNA
+      CLUSTER_ID: KUQll_wsRdWF7yPPb85xNA #generated, for example using `docker run -it --rm confluentinc/cp-kafka kafka-storage random-uuid`
     ports:
       - "9094:9094"
     networks:
@@ -28,10 +28,10 @@ services:
     volumes:
       - kafka1-data:/var/lib/kafka/data
 
-  schemaregistry:
+  schemaregistry1:
     image: confluentinc/cp-schema-registry:7.5.2
-    hostname: schemaregistry
-    container_name: schemaregistry
+    hostname: schemaregistry1
+    container_name: schemaregistry1
     restart: always
     depends_on:
       - kafka1
@@ -42,11 +42,53 @@ services:
     environment:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka1:9092
       SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
-      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry1
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.5.2
+    hostname: kafka2
+    container_name: kafka2
+    environment:
+      KAFKA_LISTENERS: BROKER://kafka2:9092,EXTERNAL://kafka2:9094,CONTROLLER://kafka2:9093
+      KAFKA_ADVERTISED_LISTENERS: BROKER://kafka2:9092,EXTERNAL://localhost:9095
+      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_PROCESS_ROLES: 'controller,broker'
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka2:9093'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry2:8085"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CLUSTER_ID: Q4H03G7wR-iEj_VCbvtuYg
+    ports:
+      - "9095:9094"
+    networks:
+      - kafkaworkshop
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+
+  schemaregistry2:
+    image: confluentinc/cp-schema-registry:7.5.2
+    hostname: schemaregistry2
+    container_name: schemaregistry2
+    restart: always
+    depends_on:
+      - kafka2
+    networks:
+      - kafkaworkshop
+    ports:
+      - "8086:8085"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka2:9092
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry2
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
 
   kafkaconnect:
-    image: confluentinc/cp-kafka-connect:7.4.3
+    image: confluentinc/cp-kafka-connect:7.5.2
     restart: always
     hostname: kafkaconnect
     container_name: kafkaconnect
@@ -68,7 +110,7 @@ services:
 
       CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
       CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schemaregistry:8085"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schemaregistry1:8085"
 
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafkaconnect"
       CONNECT_LISTENERS: http://kafkaconnect:8083
@@ -85,22 +127,21 @@ services:
 
     depends_on:
       - kafka1
-      - schemaregistry
+      - schemaregistry1
       - postgres
     networks:
       - kafkaworkshop
 
-    command:
-      - bash
-      - -c
-      - |
-        echo "Installing Connector"
-        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.7.0
-        #
-        echo "Launching Kafka Connect worker" 
-        /etc/confluent/docker/run &
-        #
+    command: >
+      bash -c "
+         echo 'Installing Connector'
+         confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.7.0
+        
+         echo 'Launching Kafka Connect worker' 
+         /etc/confluent/docker/run &
+        
         sleep infinity
+      "
 
   postgres:
     image: postgres:latest
@@ -114,11 +155,11 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_USER=user
       - POSTGRES_DB=workshop
-
     networks:
       - kafkaworkshop
 
 volumes:
   kafka1-data:
+  kafka2-data:
   kc-data:
   postgres17-data:
