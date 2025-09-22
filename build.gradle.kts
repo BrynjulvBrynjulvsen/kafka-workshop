@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val kotlin_version: String by project
@@ -78,22 +79,24 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        freeCompilerArgs.addAll("-Xjsr305=strict")
+    }
+}
+
 java.sourceCompatibility = JavaVersion.VERSION_17
 java.targetCompatibility = JavaVersion.VERSION_17
 
 val compileKotlin: KotlinCompile by tasks
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
 
 compileKotlin.dependsOn(tasks.generateAvroJava)
 
 val serverOutputDir = project.layout.buildDirectory.dir("generated-api")
 sourceSets {
 
-    if (!gradle.startParameter.taskNames.any { it.toLowerCase().contains("ktLint") }) {
+    if (!gradle.startParameter.taskNames.any { it.lowercase().contains("ktLint") }) {
         val main by getting
         main.java.srcDir("${serverOutputDir.get()}/src/main/kotlin")
     }
