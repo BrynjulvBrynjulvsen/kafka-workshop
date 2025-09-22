@@ -1,32 +1,47 @@
 # Kafka-workshop
 
 This workshop seeks to instill a basic working knowledge of Kafka in a few hours' worth of practice. You can expect
-to have a basic grasp of basic consumers, consumer groups, partitioning, schemas and cleanup policies by the time you
-make it through the exercises provided. You will also have a basic knowledge of some of Kafka's more useful command line tools.
-If you want to try your hand at implementing usage of Kafka in a major framework, a basic Spring Boot setup and accompanying exercises are also provided.
+to have a basic grasp of consumers, consumer groups, partitioning, schemas and cleanup policies by the time you
+make it through the exercises provided. You will also pick up useful Kafka CLI commands, and there are optional
+Spring Boot exercises if you want to try Kafka inside a full framework.
+
+## Quick Start
+1. **Start the local stack**
+   ```bash
+   docker compose up
+   ```
+   Keep the terminal open so the brokers, schema registry and supporting services stay up.
+2. **Seed workshop topics once brokers respond**
+   ```bash
+   ./exercise_setup/create_topics.sh
+   ```
+3. **Verify the cluster responds to CLI tools**
+   ```bash
+   docker compose exec kafka1 kafka-topics --bootstrap-server kafka1:9092 --list
+   ```
+   Seeing topics such as `hello-world` and `partitioned-topic` confirms the setup script succeeded.
+4. **Run a Kotlin smoke test to ensure Gradle wiring works**
+   ```bash
+   ./gradlew runKotlinClass -PmainClass=tasks.suggested_solutions._1_CreateProducerKt
+   ```
+   The task should finish without errors after producing a single test message, proving your toolchain is ready for the coding exercises.
 
 ## Prerequisites
-* docker
-  * alternatively, a locally installed and configured Kafka + schema registry
+* Docker
+  * Alternatively, a locally installed and configured Kafka + schema registry
 * Strongly recommended: An IDE capable of using Gradle and Kotlin
-  * A runKotlinClass Gradle task is provided as a fallback
-    * <details>
-
-      >For example, `./gradlew runKotlinClass -PmainClass=tasks.suggested_solutions._2_CreateConsumerKt`
-      </details>
+  * A `runKotlinClass` Gradle task is provided as a fallback (see the Quick Start smoke test for an example)
 * Bash
 
-## Setup
-Before we get started, there are a few necessary introductory steps:
-* Create your Kafka cluster by executing `docker compose up`
-* Once the cluster is up and running, execute the [setup script](exercise_setup/create_topics.sh) to set up topics used in exercises
+## Workshop Roadmap
+| # | Module | Focus for newcomers | Kotlin entry point |
+| - | - | - | - |
+| 1 | [Producers and consumers](exercises/1_producers_and_consumers.md) | Basic produce/poll/commit flow and CLI inspection | `src/exercises/kotlin/tasks/basics` |
+| 2 | [Consumer groups](exercises/2_kafka-consumer-groups.md) | Coordinated consumption and offset management | `src/exercises/kotlin/tasks/consumergroups` |
+| 3 | [Partitions and ordering](exercises/3_partitions_and_ordering.md) | Keys, ordering guarantees and horizontal scaling | `src/exercises/kotlin/tasks/partitions` |
+| 4 | [Schemas and serdes](exercises/4_schemas_and_serdes.md) | Working with schema registry and Avro serdes | `src/exercises/kotlin/tasks/serdes` |
+| 5 | [Deletion policy and log compaction](exercises/5_deletion_policy.md) | Kafka retention strategies and compaction behaviour | `src/exercises/kotlin/tasks/cleanup` |
+| 6 | [Kafka Connect](exercises/6_kafka_connect.md) | Declarative data movement with Kafka Connect | `kafkaconnect_solution/` |
+| 7 | [Spring Kafka using Spring Boot](exercises/7_spring_boot.md) | Applying Kafka concepts inside Spring Boot | `src/main/kotlin/io/bekk` |
 
-## Topics
-Once setup is complete, find the exercises and further instructions here:
-1. [Producers and consumers](exercises/1_producers_and_consumers.md)
-2. [Consumer groups](exercises/2_kafka-consumer-groups.md)
-3. [Partitions and ordering](exercises/3_partitions_and_ordering.md)
-4. [Schemas and serialization/deserialization](exercises/4_schemas_and_serdes.md)
-5. [Deletion policy and log compaction](exercises/5_deletion_policy.md)
-6. [Kafka connect](exercises/6_kafka_connect.md)
-7. [Spring Kafka using Spring Boot](exercises/7_spring_boot.md)
+Work through the modules in order if you're new to Kafka, as each one builds on the ideas established earlier. Once setup is complete, dive into the exercise guides linked above for detailed steps, console explorations and Kotlin TODOs.
