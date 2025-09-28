@@ -1,78 +1,70 @@
 # Kafka Producers and Consumers
-These introductory exercises will illustrate Kafka's most basic functionality: Producing and consuming messages.
 
-1. [Console Consumer](#the-kafka-console-consumer-and-kafka-console-producer-tools)
-2. [Code Exercises](#code-exercises)
+> Build intuition for how Kafka sends and receives messages before touching more advanced features.
 
-## The `kafka-console-consumer` and `kafka-console-producer` tools
-Kafka comes with a set of built-in console tools. These are useful for inspecting the state of your Kafka cluster, topics,
-consumer groups, clients and more. 
+## Learning goals
+- Produce and consume messages with Kafka CLI tools.
+- Understand why consumers must subscribe, poll, and commit offsets.
+- Run the starter Kotlin producer/consumer exercises.
 
-The perhaps most basic components of this toolbox are console implementations of basic Kafka consumers and producers. 
+## Prerequisites
+- Local stack running (`docker compose up`) and topics created via `./exercise_setup/create_topics.sh`.
+- Console tools available by attaching to the broker container:
+  ```bash
+  docker compose exec kafka1 /bin/bash
+  ```
+  Stay inside that shell for the commands below so hostnames such as `kafka1:9092` resolve correctly.
 
-### Setting up the console tools
-Most of the console tools we'll discuss conveniently come bundled with the Kafka continer. It is suggested you use these
-for ease of setup. Assuming you've got the docker-compose setup running, execute `docker-compose exec kafka1 /bin/bash` 
-from the directory where docker-compose.yml is located to get started.
+## Console tools walkthrough
 
-### Kafka-console-producer
- For this first exercise, we'll start out with some simple producing and consuming. 
- Use `kafka-console-producer` to produce messages to a topic. Either use the hello-world topic created during setup, or
-create your own using `kafka-topics` (see the [setup script](../exercise_setup/create_topics.sh) for inspiration).
+### What you'll do
+1. Launch the Kafka console producer and publish a few greetings.
+2. Launch the Kafka console consumer and read those greetings.
+3. Observe live consumption by producing from a second terminal.
 
->**_Hint: you need to refer to the bootstrap server by the host name of its published listener
-(that is, kafka1, not localhost - even though you are in fact running the command from the broker itself)._**
+### Commands and checkpoints
+1. **Produce some messages**
+   ```bash
+   kafka-console-producer --bootstrap-server kafka1:9092 --topic hello-world
+   ```
+   Type a few lines (press `Enter` after each). Remember to reference the broker as `kafka1`, not `localhost`, because you are running inside the container.
 
-#### Example usage
-<details>
+   _Checkpoint_: Exit the producer (`Ctrl+C`) and run `docker compose exec kafka1 kafka-topics --bootstrap-server kafka1:9092 --describe --topic hello-world` to confirm the topic exists.
 
-> `kafka-console-producer --bootstrap-server kafka1:9092 --topic hello-world`, then input messages interactively.
+2. **Consume everything from the start**
+   ```bash
+   kafka-console-consumer --bootstrap-server kafka1:9092 --from-beginning --topic hello-world
+   ```
+   If you omit `--from-beginning`, the consumer starts at the latest offset and shows nothing for historical data—this is the first gotcha many new users hit.
 
-Alternatively, `echo "Test123" | kafka-console-producer --bootstrap-server kafka1:9092 --topic hello-world` to input a single message.
-</details>
+   _Checkpoint_: You should see the messages you produced. Use `Ctrl+C` to stop.
 
-### Kafka-console-consumer
-Next, try consuming the messages produced in the previous step using `kafka-console-consumer`. Observe that messages produced during the previous step are printed. 
+3. **Watch live traffic**
+   - Keep the consumer running. After it catches up, it will continue tailing new data even if you started it with `--from-beginning`.
+   - In another terminal (or the host shell), run the console producer again and send new messages.
 
->**_Hint: By default, the console consumer starts consuming from the most recent offset. To consume messages from the beginning, you will need to add the `--from-beginning` argument._** 
+   _Troubleshooting_: If the consumer stops receiving data, verify the topic name and that the original consumer did not exit due to a typo (look for errors in its terminal).
 
-#### Example usage
-<details>
+### How the consumer loop works (concept recap)
+1. Client polls Kafka for the next batch of messages (`poll`).
+2. Broker returns records.
+3. Client processes them.
+4. Client commits the offsets (writes them to the `__consumer_offsets` topic).
+5. Client polls again.
 
-> `kafka-console-consumer --bootstrap-server kafka1:9092 --from-beginning --topic hello-world`
-</details>
+You will mirror the same subscribe → poll → commit flow in the Kotlin exercises.
 
-### Listen continuously
-The `kafka-console-consumer` will keep listening until terminated using `ctrl+c`. With the consumer listening, try opening a separate
-terminal session and produce some messages to the topic. Observe that these are consumed continuously in your consumer session.
+## Kotlin code exercises
 
-### How consuming really works
-The happy-path communication pattern between consumer and Kafka broker is (simplified) as follows:
-* Client: "Please send me the next messages" (This is known as polling)
-* Broker: "Okay, here is the next batch"
-* Client: Processes the messages
-* Client: "I acknowledge having finishing processing these messages."
-* Broker: Saves the offset for the active consumer group to a specialized __offsets-topic
-* Client: "Please send the next messages"
+Starter clients live in [`src/exercises/kotlin/tasks/BarebonesKafkaClients.kt`](../src/exercises/kotlin/tasks/BarebonesKafkaClients.kt). They already configure bootstrap servers, schema registry, and common serializers.
 
-## Code Exercises
-Most sections will contain code exercises, along with suggested solutions in Kotlin. For this section, we'll create some basic 
-consumers and producers.
+| Exercise | File | Hint | Verify |
+| - | - | - | - |
+| Basic producer | [`basics/1_CreateProducer.kt`](../src/exercises/kotlin/tasks/basics/1_CreateProducer.kt) | Call `producer.send(ProducerRecord(Constants.TOPIC_NAME, "your-message"))` inside the provided `use` block. | Run `./gradlew runKotlinClass -PmainClass=tasks._1_CreateProducerKt` (adjust the class path if needed) and consume the topic with the console consumer to confirm the write. |
+| Basic consumer | [`basics/2_CreateConsumer.kt`](../src/exercises/kotlin/tasks/basics/2_CreateConsumer.kt) | Follow the pattern `subscribe(listOf(Constants.TOPIC_NAME))` → `poll(Duration.ofSeconds(1))` (waits up to one second) → process records → `commitSync()`. Auto-commit is disabled in the helper to make this explicit. | Produce a message, run the class, and ensure it prints the record. Rerun without new messages to confirm the committed offsets prevent duplicates. |
+| Long-running consumer | [`basics/3_LongRunningConsumer.kt`](../src/exercises/kotlin/tasks/basics/3_LongRunningConsumer.kt) | Keep the subscribe → poll → commit loop inside `while (true)` and log keys/values so you see live updates. | Let it run while you publish messages via the console producer; new records should appear immediately. |
 
-For convenience, pre-configured barebones Kafka clients are provided for you [here](../src/exercises/kotlin/tasks/BarebonesKafkaClients.kt).
-Feel free to use these directly, or study and modify them to your liking.
+Need inspiration or to check your work? Suggested solutions sit under `src/exercises/kotlin/tasks/basics/suggestedSolutions/`—peek only after trying.
 
-The provided BareBonesKafkaClients lets you create a Kafka consumer by calling getBareBonesConsumer(). Before
-this consumer receives messages, it needs to do the following:
-* *Subscribe* to the topic(s) you wish to receive records from
-  * `consumer.subscribe(listOf("myTopic")`
-* *Poll* for new records, with a given *timeout*
-  * `consumer.poll(Duration.ofMillis(1000)`
-  * The timeout specified to the default polling method determines how long the client should block before returning an empty record set if no records are available. If there are records available, it will return immediately
-* Once finished processing a batch, commit its offset by calling `consumer.commitSync()`
-  * This may or may not be a necessary step, based on whether `enable.auto.commit` is enabled for the consumer. If this is enabled (default), offsets will be commited automatically upon the next poll
-  * The provided barebones Kafka clients disable auto commit for instructive purposes, but feel free to alter these as you see fit
-
-1. [Creating a basic producer application](../src/exercises/kotlin/tasks/basics/1_CreateProducer.kt)
-2. [Creating a basic consumer application](../src/exercises/kotlin/tasks/basics/2_CreateConsumer.kt)
-3. [Continuously consuming messages as they are produced](../src/exercises/kotlin/tasks/basics/3_LongRunningConsumer.kt)
+## Next steps
+When you can reliably produce and consume data—both via CLI and code—you’re ready to explore how consumer groups coordinate work in [exercise 2](2_kafka-consumer-groups.md).

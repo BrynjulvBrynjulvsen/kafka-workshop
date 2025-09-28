@@ -1,123 +1,98 @@
 # Kafka Consumer Groups
 
-1. [Introduction](#introduction-to-consumer-groups)
-2. [Code exercises](#code-exercises)
-3. [The kafka-consumer-groups tool](#console-tool-kafka-consumer-groups)
+> Coordinate multiple consumers, understand offsets, and reset them when needed.
 
-## Introduction to consumer groups
-These exercises will familiarize you with kafka consumer groups. Consumer groups enable you to coordinate separate consumer processes 
-working as a larger unit, allowing you to parallelize consumption and processing of messages as well as resuming an interrupted
-consumer. As a consumer processes messages, it will acknowledge back to the Kafka cluster that it has finished processing a given message - 
-this is known as committing an offset.
+## Learning goals
+- See how a consumer group divides partitions among members so work can be parallelized.
+- Practice committing offsets in code and from the CLI.
+- Inspect, describe, and reset consumer group state using `kafka-consumer-groups`.
 
-Consumer groups have two primary functions:
-* Dividing [partitions](3_partitions_and_ordering.md) of a topic between processes working as part of a larger whole (ie threads in an application)
-  * For now, try working on a single-partition topic. Partitions are explained in more depth later.
-* Storing progress on each partition for each consumer group, allowing for handoff and resumption
+## Before you start
+- Complete the producers/consumers exercise and ensure `hello-world` and `partitioned-topic` exist.
+- Keep the Kafka stack running (`docker compose up`) and have some messages available to consume.
 
+## Why consumer groups matter
+- **Parallel consumption**: Kafka assigns partitions in a topic to consumers within the same group so multiple processes can work on the same data set simultaneously. For single-partition topics this means only one member will receive data until you add more partitions (covered in [exercise 3](3_partitions_and_ordering.md)).
+- **Progress tracking**: Kafka stores offsets per topic-partition _and_ per consumer group so a stopped consumer can resume later.
 
+Keep those two responsibilities in mind as you work through the exercises.
 
-## Code Exercises
-These [consumer group related exercises](../src/exercises/kotlin/tasks/consumergroups) provide a hands-on 
-introduction to the consumer group concept. If you're using the [barebones Kafka client](../src/exercises/kotlin/tasks/BarebonesKafkaClients.kt),
-you'll want to use the groupId-argument when getting the barebones consumer to get started.
+## Hands-on path
 
-1. [Coordinating multiple members of a consumer group](../src/exercises/kotlin/tasks/consumergroups/1_MultiMemberConsumerGroup.kt)
-2. [Committing offsets](../src/exercises/kotlin/tasks/consumergroups/2_OffsetCommitting.kt)
+### 1. Practice committing offsets intentionally
+- Kotlin scaffolding: [`src/exercises/kotlin/tasks/consumergroups/2_OffsetCommitting.kt`](../src/exercises/kotlin/tasks/consumergroups/2_OffsetCommitting.kt).
+- **What to implement**: subscribe to `Constants.TOPIC_NAME`, poll in a loop, print each record, and call `commitSync()` (or `commitAsync()`) once you finish a batch. Break out when the poll returns no records so the program exits cleanly.
+- **Why commit?**: committing writes the latest processed offset to Kafka’s internal `__consumer_offsets` topic so reruns (or other group members) resume where you stopped.
+- **Commit choices**: `commitSync()` blocks until the broker confirms the write (safer, slower); `commitAsync()` returns immediately (faster, but you may want error handling if the commit fails).
+- **Verify**: Run `./gradlew runKotlinClass -PmainClass=tasks.consumergroups._2_OffsetCommittingKt`. After it processes the backlog, rerun the class without producing new records—no messages should print the second time. Optionally confirm the stored offset via `kafka-consumer-groups --describe --group offset-commit-group`.
 
-## Console Tool: `kafka-consumer-groups` 
-This next section will familiarize you with the kafka-consumer-groups tool, an essential utility for managing consumer groups and their offsets.
-### Setup
-#### Populate a topic
-First, populate a topic with some messages. You may already have done this as a side effect of the code exercises; otherwise,
-produce some using [kafka console clients](1_producers_and_consumers.md).
+### 2. Explore group assignments with code
+- Kotlin scaffolding: [`src/exercises/kotlin/tasks/consumergroups/1_MultiMemberConsumerGroup.kt`](../src/exercises/kotlin/tasks/consumergroups/1_MultiMemberConsumerGroup.kt).
+- **What to implement**: create at least three consumers sharing the same `group.id`, subscribe them to `Constants.PARTITIONED_TOPIC`, poll, and print partition assignments. Use `ContinuousProducer` (from `tasks.ContinuousProducer`) to keep data flowing, for example:
+  ```kotlin
+  val producer = ContinuousProducer(Constants.PARTITIONED_TOPIC) { "key" to "value" }
+  producer.resume()
+  ```
+- **Execution model**: the provided scaffold spins up every consumer within the same `main` function—run the Gradle task once and let it log in the foreground while you observe.
+- **What to watch**: Only one consumer receives data per partition. If your topic has a single partition, the other consumers remain idle—try `partitioned-topic` which has multiple partitions.
+- **Verify**: Run `./gradlew runKotlinClass -PmainClass=tasks.consumergroups._1_MultiMemberConsumerGroupKt` and, in parallel, execute `docker compose exec kafka1 kafka-consumer-groups --bootstrap-server kafka1:9092 --describe --group <your-group>` to see partition assignments and lag.
 
-#### Commit some consumer offsets
-After the topic is populated, consume some messages and commit offsets. Again, you may have already done this during the code exercises.
-Otherwise, go ahead and consume the messages from the setup step by using `kafka-console-consumer` with a `--group` argument
-in order to commit some offsets.
+## Console drills with `kafka-consumer-groups`
 
-<details>
+### Populate data and commit an offset
+If you need fresh messages, reuse the solution from the producer exercise or run:
 
-> `kafka-console-consumer --bootstrap-server kafka1:9092 --from-beginning --topic hello-world --group my-group` 
-</details>
+```bash
+docker compose exec kafka1 kafka-console-producer --bootstrap-server kafka1:9092 --topic hello-world
+```
 
+Then commit offsets for a group using the CLI so the `kafka-consumer-groups` tool has something to report:
 
-### List consumer groups
-First, try listing all the consumer groups on your cluster using the `kafka-consumer-groups` tool. Observe that your group from
-the previous step appears, as well as (potentially) any other groups you might have committed offsets for (such as console consumer sessions)
+```bash
+kafka-console-consumer --bootstrap-server kafka1:9092 \
+  --from-beginning --topic hello-world --group my-group
+```
 
-<details>
+Let it process a few messages, then stop with `Ctrl+C`.
 
->`kafka-consumer-groups --bootstrap-server kafka1:9092 --list`
-</details>
+### List and describe groups
+1. **List groups**
+   ```bash
+   kafka-consumer-groups --bootstrap-server kafka1:9092 --list
+   ```
+   _Checkpoint_: Your code-created group IDs (for example, `multi-member-group-*`) should appear alongside `console-consumer-...` groups.
 
->**Notice that no topic names are output from this command. It is relatively easy to look up
-> which topics a consumer group has offsets committed for due to the way offsets are stored. The inverse requires a more costly set of operations
-> and some scripting work**
+2. **Describe a specific group**
+   ```bash
+   kafka-consumer-groups --bootstrap-server kafka1:9092 --describe --group my-group
+   ```
+   _What you learn_: for each topic-partition assignment you will see the current committed offset, the latest offset on the broker (log end offset), and the lag between them. The table also shows which client instance holds the assignment (`consumer-id`, `host`, `client-id`).
 
-### Inspect consumer group details
-Now try listing out the details of your consumer group. 
+> _Note_: this command lists partitions _per group_. Kafka does not provide a quick inverse lookup (topics to groups) without additional scripting.
 
-<details>
+### Reset offsets hands-on
+> Make sure no consumers for that group are running; otherwise the reset command will fail.
 
->`kafka-consumer-groups --bootstrap-server kafka1:9092 --describe --group my-group`
-</details>
+1. **Reset to a specific offset** (reuse the group ID you populated above, e.g. `my-group`)
+   ```bash
+   kafka-consumer-groups --bootstrap-server kafka1:9092 \
+     --topic hello-world:0 --group my-group \
+     --reset-offsets --to-offset 1 --execute
+   ```
+   Run your consumer again and notice previously read messages reappear.
 
-The resulting table provides some useful information:
-* _Topic_
-* _Partition_
-* _Current-offset_ is the last committed offset (in absolute terms) by this consumer group for this topic-partition pairing
-* _Log-end-offset_ is the current highest offset for this partition (again in absolute terms)
-* _Lag_ is the relative difference between the previous two values
-  * This is useful as a metric, as it is indicative of processing having stopped or that a consumer is otherwise struggling to keep up
-* _Consumer-id_ is a unique identifier for the actual client process assigned this partition for this consumer group
-  * This can be useful while debugging and examining performance, as it lets you know which partitions are assigned to the same clients (if any)
-* _Host_ refers to the hostname of this consumer
-* _Client-id_ is a label with no impact on execution. This can be useful when troubleshooting a client outside your direct control, as it may offer a hint as to what sort of client library they are using.
+2. **Reset by timestamp**
+   ```bash
+   kafka-consumer-groups --bootstrap-server kafka1:9092 \
+     --topic hello-world --group my-group \
+     --reset-offsets --to-datetime 2023-12-10T11:50:00.000 --execute
+   ```
+   Adjust the timestamp to one between two message batches and confirm only the later batch is replayed.
 
->**Offsets are stored on a per-topic-per-partition-per-consumer-group basis**
+### Troubleshooting tips
+- **Lag never decreases**: confirm your consumers are committing offsets; otherwise the group will appear perpetually behind. Remember that the barebones consumer disables auto-commit.
+- **Reset command complains about active members**: stop your code/CLI consumers or wait for them to time out (`session.timeout.ms`).
+- **Describe output shows `-` for consumer-id**: the group has no active members—start a consumer and watch the table refresh.
 
-### Manually replace a consumer group offset by offset
-Try changing the offset of your consumer group to an absolute value using the `--reset-offsets` argument. Note that in order to
-alter offsets in this manner you cannot have active clients running.
-
-<details>
-
-> `kafka-consumer-groups --bootstrap-server kafka1:9092 --topic hello-world:0 --group my-group --reset-offsets --to-offset 1 --execute`
-> 
-> The 0 after the topic name indicates which partition to operate on. This is not important for single-partition topics like we're working on here, but will be relevant in most real-world cases. 
-> 
-> Note the `--execute` parameter. In production, always do a `--dry-run` first. If neither parameter is supplied, `--dry-run` is the current default behavior.
-</details>
-
-Consume this topic with the given consumer group id, and notice that some messages you previously received are received again.
-
-### Manually replace consumer group offset by date
-It is frequently difficult to pinpoint the identity of a message you need to process again down to a specific offset. In these cases,
-it is useful to reset the offsets based on timestamps instead.
-
->**This is possible thanks to Kafka records all having timestamps as part of their metadata. Keep in mind that the timestamp you provide for the reset command 
-> is in the context of the system time of the Kafka cluster at the time the record was produced**
-
-* Produce some messages in batches, and consume them
-* Shut down any consumers using your group
-* Use the `kafka-consumer-groups` tool to reset the offset to a timestamp in
-between the time you produced the messages.
-  <details>
-  
-  `kafka-consumer-groups --bootstrap-server kafka1:9092 --topic hello-world --group my-group --reset-offsets --to-datetime 2023-12-10T11:50:00.000 --execute` 
-  </details>
-
-* Start a consumer with the newly reset consumer group. Notice that any messages produced after the timestamp specified in the step above are received again.
-
-## Console exercise and next step
-Now that you've gotten a basic introduction to consumer groups, let's experiment a little. Try creating several consumers with the
-same consumer group ID against the same topic. Produce some messages to the topic, and observe what happens.
-
-If you've followed these exercises in order, you might notice that only one of your consumers receives messages. Use the consumer group
-tool described above to describe the state of the group. Can you tell what's going on? Try terminating the consumer that got messages, 
-and produce some more. Note that the previously idle consumer now receives messages.
-
-This happens because we've so far been working with a single partition only. Let's figure out how to get more done in
-parallel in [partitions and ordering](3_partitions_and_ordering.md).
+## Ready for more?
+Once you understand how partitions get balanced across a group, jump to [partitions and ordering](3_partitions_and_ordering.md) to control how keys influence that balancing.

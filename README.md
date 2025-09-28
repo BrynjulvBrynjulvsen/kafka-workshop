@@ -26,6 +26,15 @@ Spring Boot exercises if you want to try Kafka inside a full framework.
    ```
    The task should finish without errors after producing a single test message, proving your toolchain is ready for the coding exercises.
 
+### Optional tooling: `kcat`
+Some later exercises demonstrate Avro-aware CLI consumption using [`kcat`](https://github.com/edenhill/kcat). Install it now if you want that tooling ready:
+
+- macOS (Homebrew): `brew install kcat`
+- Debian/Ubuntu: `sudo apt-get install kcat`
+- Other platforms: consult the project README for binaries or build instructions.
+
+Verify the install with `kcat -V`. You can skip this if you prefer to rely solely on the provided Kotlin code and Kafka console clients.
+
 ## Prerequisites
 * Docker
   * Alternatively, a locally installed and configured Kafka + schema registry
