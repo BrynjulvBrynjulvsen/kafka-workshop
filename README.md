@@ -52,5 +52,6 @@ Verify the install with `kcat -V`. You can skip this if you prefer to rely solel
 | 5 | [Deletion policy and log compaction](exercises/5_deletion_policy.md) | Kafka retention strategies and compaction behaviour | `src/exercises/kotlin/tasks/cleanup` |
 | 6 | [Kafka Connect](exercises/6_kafka_connect.md) | Declarative data movement with Kafka Connect | `kafkaconnect_solution/` |
 | 7 | [Spring Kafka using Spring Boot](exercises/7_spring_boot.md) | Applying Kafka concepts inside Spring Boot | `src/main/kotlin/io/bekk` |
+| 8 | [Apache Flink](exercises/8_apache_flink.md) | Stateful stream processing with Apache Flink | `src/exercises/kotlin/tasks/flink` |
 
 Work through the modules in order if you're new to Kafka, as each one builds on the ideas established earlier. Once setup is complete, dive into the exercise guides linked above for detailed steps, console explorations and Kotlin TODOs.

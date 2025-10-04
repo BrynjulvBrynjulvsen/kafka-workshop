@@ -1,92 +1,73 @@
-# Schemas in Kafka
+# Schemas and SerDes
 
-## Introduction
-Kafka itself attaches no special meaning to record values - they are essentially just byte arrays. In the exercises up
-to this point, we've simply treated messages as strings, using a string deserializer behind the scenes. This is all
-well and good on a small scale, but in real-world applications we will frequently need to coordinate schemas and their
-evolution across a significant number of applications, teams and individuals. Enter the schema registry.
+> Move beyond raw strings by producing and consuming strongly typed Avro messages with the schema registry.
 
-## Schema registry
-The schema registry is a separate supporting application frequently deployed alongside Kafka. It enables coordinated
-exchange of schemas between producers and consumers, enforcement of schema compliance for records and compatibility
-rules for new schema versions. 
+## Learning goals
+- Understand why schemas matter for Kafka interoperability.
+- Generate Avro classes and use them when producing and consuming.
+- Inspect schemas via the schema registry REST API.
 
-The schema registry is supported by most Kafka client libraries, and build plugins exist for build systems such as 
-Maven and Gradle. Several formats are supported, including Json, Protobuf and Avro. The examples found in this workshop
-use Avro, as this is an efficient binary format suitable for production loads.
+## Before you start
+- Ensure the schema registry container is running (`docker compose up` includes it on port 8085).
+- Run `./gradlew build` once to generate Avro classes into `build/generated-main-avro-java` if you changed schemas.
 
-## Code exercise
-[Implement](../src/exercises/kotlin/tasks/serdes/1_serialization_deserialization.kt) simple serialization and deserialization
-of Avro messages. Feel free to use this [schema](../src/main/avro/WorkshopStatusMessage.avsc), or create your own in this directory
+## Step-by-step path
 
-> When using the BarebonesKafkaClients, try using the getAvroConsumer/getAvroProducer functions to get started
+### 1. Implement the Kotlin serialization exercise
+- File: [`src/exercises/kotlin/tasks/serdes/1_serialization_deserialization.kt`](../src/exercises/kotlin/tasks/serdes/1_serialization_deserialization.kt).
+- **What to implement**:
+  - Use `BarebonesKafkaClients.getAvroProducer<WorkshopStatusMessage>()` to send a few messages to `Constants.AVRO_TOPIC_NAME`.
+  - Use `getAvroConsumer<WorkshopStatusMessage>()` to subscribe, poll, and print a field or two from the deserialized record.
+  - Commit offsets (`commitAsync()` is fine) so rerunning skips already processed records.
+- **Verify**:
+  - Run `./gradlew runKotlinClass -PmainClass=tasks.serdes._1_serialization_deserializationKt`.
+  - You should see log lines containing `WorkshopStatusMessage(...)`. Use the CLI consumer without schema support to confirm it prints encoded bytes—an illustration of why serdes matter.
 
+### 2. Inspect the schema registry
+> These commands use the schema registry running at `http://localhost:8085` (forwarded from the Docker container).
 
-> This workshop generates Java classes using the [gradle avro plugin](https://github.com/davidmc24/gradle-avro-plugin). 
-> Its default location for schema files is src/main/avro. The plugin provides a generateAvroJava task, which places
-> generated classes under `build/generated-main-avro-java`. If you modify or add your own schemas, run the generateAvroJava
-> task to (re)generate POJO classes.
+1. **List subjects**
+   ```bash
+   curl localhost:8085/subjects/
+   ```
+   _Checkpoint_: Expect entries like `schema-using-topic-value` after running the Kotlin producer.
 
-## Schema registry API
-The schema registry provides a robust [api](https://docs.confluent.io/platform/current/schema-registry/develop/api.html).
-Use the API to have a look at the schema(s) created by the code exercise above.
+2. **List subject versions**
+   ```bash
+   curl localhost:8085/subjects/schema-using-topic-value/versions
+   ```
+   _What it shows_: Each number corresponds to a schema evolution event.
 
+3. **Inspect a specific version**
+   ```bash
+   curl localhost:8085/subjects/schema-using-topic-value/versions/1
+   ```
+   The payload includes the Avro schema, id, and compatibility type.
 
-### Inspecting schemas using the API
-First, list the *subjects* present in your schema registry.
-<details>
+### 3. (Optional) Post a new schema version
+- Modify `WorkshopStatusMessage.avsc` (for example, add a nullable field with a default).
+- Run `./gradlew generateAvroJava` to regenerate classes.
+- Post using:
+  ```bash
+  curl -X POST localhost:8085/subjects/schema-using-topic-value/versions \
+    -H "Content-Type: application/json" \
+    -d '{ "schema":"{\"type\":\"record\",\"name\":\"WorkshopStatusMessage\",\"namespace\":\"io.bekk.publisher\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"likes\",\"type\":[\"null\",\"int\"],\"default\":null}]}", "schemaType": "AVRO"}'
+  ```
+- Verify the new version appears and that the Kotlin consumer still deserializes (thanks to backwards compatibility).
 
-> `curl localhost:8085/subjects/`
-</details>
+### 4. (Optional) Work with Avro data from the CLI
+Many Kafka distributions do not bundle Avro-aware console tools. [`kcat`](https://github.com/edenhill/kcat) fills the gap:
 
-> The schema registry organizes schemas by *subject*. There are several provided [subject naming strategies](https://docs.confluent.io/cloud/current/sr/fundamentals/serdes-develop/index.html#configuration-details)
-> available to determine how schemas for a given record are resolved, as well as an implementable interface. For now,
-> let's use the defaut `TopicNameStrategy`. This uses subject names on the form `<topicname>-subject` and `<topicname>-key`.
-
-You'll likely see something along the lines of `["schema-using-topic-value"]`. Next, look at the list of versions for your
-subject.
-
-<details>
-
-> curl localhost:8085/subjects/schema-using-topic-value/versions
-</details>
-
-Finally, have a look at the specific schema:
-
-<details>
-
-> curl localhost:8085/subjects/schema-using-topic-value/versions/1
-</details>
-
-### Posting new subject versions using the API
-The commonplace way of posting new subject version is through build plugins, client libraries or some other structured means.
-It may, however, be illustrative to experiment with creating new schema versions using the API.
-
-Try posting a new version of the `schema-using-topic-value` subject (or one of the other subjects you've created).
-
-> If you get an error stating that your schema is incompatible with, recall that the default backwards compatibility policy
-> is backwards compatibility. Under this policy, new fields must be nullable and/or have a default value set.
-
-#### Example
-<details>
-
+```bash
+kcat -C -b localhost:9094 -t schema-using-topic -r localhost:8085 -s value=avro -e
 ```
-curl -X POST localhost:8085/subjects/schema-using-topic-value/versions \
--H "Content-Type: application/json" \
--d '{ "schema":"{\"type\":\"record\",\"name\":\"WorkshopStatusMessage\",\"namespace\":\"io.bekk.publisher\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"likes\",\"type\":[\"null\",\"string\"],\"default\":null}]}", "schemaType": "AVRO"}'
-```
-</details>
 
-## Console tools
-While some distributions come with tools for reading/writing Avro records using the schema registry (unlike the regular
-`kafka-console-*` tools), many do not. A powerful, freely available command-line tool that fills this niche is `kcat`. Most
-package managers, such as apt-get or homebrew, have packages for this tool.
+The `-r` flag points to the schema registry and `-s value=avro` tells `kcat` to deserialize record values.
 
-### Exercise
-Try reading and writing to `schema-using-topic` using the `kcat` tool.
+## Troubleshooting tips
+- **`ClassNotFoundException` for Avro classes**: re-run `./gradlew generateAvroJava` and ensure your IDE includes the generated sources.
+- **`io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Unauthorized`**: make sure you are pointing to `http://localhost:8085` (no auth required in this setup).
+- **Consumer fails with `Unknown magic byte`**: you attempted to consume Avro data with a plain string deserializer. Switch to the Avro consumer or use `kcat` with `-s value=avro`.
 
-#### Example
-<details>
-
-`kcat -C -b localhost:9094 -t schema-using-topic -r localhost:8085 -s value=avro -e`
-</details>
+## Looking ahead
+With schemas under control, you can explore storage behaviour in [exercise 5](5_deletion_policy.md) or build connectors in exercise 6 later on.

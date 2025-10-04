@@ -1,46 +1,57 @@
-# Kafka Partitions
-1. [Introduction](#introduction)
-2. [Partitions and consumer groups](#partitions-and-consumer-groups)
-3. [Ordering and keys](#ordering-and-keys)
-4. [Code exercises](#code-exercises)
+# Kafka Partitions and Ordering
 
-## Introduction
-In the previous section, we worked on a single partition. This simplifies some concepts, but restricts us to a single
-consuming thread. This is because Kafka provides the ability to guarantee the order in which a subset of records on
-a topic are received. Since messages are retrieved in offset order, this left us with a single consuming process. 
+> Use multiple partitions to scale consumers and preserve ordering for related messages.
 
-A single consuming thread is obviously not going to scale well in most production settings. Fortunately, Kafka's 
-partitioning concept provides us with the tools to overcome this limitation. Each topic is divided into a number of *partitions*. When
-messages are produced, they're assigned to one of the topic's partitions. 
+## Learning goals
+- Understand how partitions enable parallel consumption within a consumer group.
+- See how message keys influence partition selection and ordering guarantees.
+- Practice coordinating multiple consumer groups and using keys from Kotlin.
 
-It should be noted that the number of partitions chosen for a topic has many other implications as well, including cluster performance. For now, let's concentrate
-on the client side of things.
+## Before you start
+- Ensure the `partitioned-topic` exists (`./exercise_setup/create_topics.sh` creates it).
+- Have a few terminals ready: you’ll observe both CLI commands and Kotlin output.
 
-## Partitions and consumer groups
-When new consumers with a consumer group ID subscribe to a topic, Kafka will put that group in a *rebalancing* state.
-While in this state, members of the group receive no further messages whilst Kafka reassigns that group's partitions as
-evenly as possible amongst the group members. Once each member has acknowledged its new assignment, the group returns to
-an *active* state and consumption resumes. This way, records may be consumed in parallel whilst still only being processed
-once by the group.
+## Concept refresh
+- Kafka guarantees ordering _within_ a partition; adding partitions increases throughput but requires careful key usage.
+- When a consumer joins or leaves a group, Kafka rebalances assignments—expect a short pause while this happens.
 
-### Exercise
-Choose a topic with multiple partitions. `partitioned-topic` should already exist if you ran the setup script earlier.
-* Create several consumers using the console-consumer tool
-* Examine the group using the `kafka-consumer-groups` tool. Notice that the partitions have been divided
-* Produce a number of records to the topic. Observe that each record is received once, but potentially by different consumers.
+## Guided exercise
 
-> Try using different keys to get your messages assigned to different partitions. `kafka-console-producer --bootstrap-server kafka1:9092 --topic partitioned-topic --property "parse.key=true" --property "key.separator=:"`
-> lets you specify keys on the form of `key:value`
+### 1. Observe partition balancing live
+1. Produce keyed records with the console producer:
+   ```bash
+   kafka-console-producer --bootstrap-server kafka1:9092 \
+     --topic partitioned-topic --property "parse.key=true" --property "key.separator=:"
+   ```
+   Enter messages like `team-alpha:Message 1` and `team-beta:Message 1`.
 
-## Ordering and keys 
+2. Start multiple console consumers using the same group ID:
+   ```bash
+   kafka-console-consumer --bootstrap-server kafka1:9092 --topic partitioned-topic --group demo-group
+   ```
+   Launch this in two or three terminals. Watch how each instance prints a subset of messages once rebalancing completes.
 
-Though overridable, the default partitioning strategies make it non-obvious which discrete partition a given message will be 
-written to. Instead, it guarantees us that messages with the same *key* will be written to the same partition. This provides a way to guarantee that a subset of records will be 
-consumed in the same order as they were written.
+   _Checkpoint_: Run `kafka-consumer-groups --bootstrap-server kafka1:9092 --describe --group demo-group` and confirm each partition is assigned to exactly one consumer.
 
-> For those coming from a rdbms-background, the concept of keys might seem confusing initially. Keys are not necessarily 
-> identifiers; rather, they indicate that something is contextually related. In some usages identical keys *may* indicate
-> a superseding version of a resource (particularly when using the log compaction cleanup policy), but this is not required.
+### 2. Implement the Kotlin ordering exercise
+- Kotlin scaffolding: [`src/exercises/kotlin/tasks/partitions/1_keys_and_ordering.kt`](../src/exercises/kotlin/tasks/partitions/1_keys_and_ordering.kt).
+- **What to implement**:
+  - Spin up three consumer groups with at least two members each using the provided helper classes or plain consumers.
+  - Subscribe them to `Constants.PARTITIONED_TOPIC` and print `partition`, `key`, and `value` so you can see ordering per key.
+  - Produce two or more keyed series (for example, keys `invoice-123` and `invoice-456`) and ensure each series stays in order.
+- **Verify**:
+  - Run `./gradlew runKotlinClass -PmainClass=tasks.partitions._1_keys_and_orderingKt`.
+  - In parallel, use the CLI describe command to ensure the groups are in `Stable` state and partitions are split.
+  - Observe that within each key, offsets increase sequentially even though different consumers may handle different partitions.
 
-## Code exercise
-[Implement](../src/exercises/kotlin/tasks/partitions/1_keys_and_ordering.kt) and demonstrate ordered consumption of a topic.
+### 3. Optional: Inspect rebalancing behaviour
+- Start the Kotlin class, immediately run `kafka-consumer-groups --bootstrap-server kafka1:9092 --describe --group <group>` and notice the state flips from `Rebalancing` to `Stable` once each member confirms assignments.
+- Reduce the delay in your code’s polling loop to see how quickly rebalances complete.
+
+## Troubleshooting tips
+- **Messages appear out of order**: confirm you used consistent keys; without a key, Kafka hashes the serialized value which scatters related records.
+- **Only one consumer receives data**: check the topic’s partition count—parallelism requires as many partitions as active consumers.
+- **Consumer stops receiving**: rebalancing may still be in progress. Allow a few seconds, or print logs when `pauseRendezvous`/`resumeRendezvous` fire if using helpers.
+
+## What’s next?
+With partition behaviour under your belt, move on to [schemas and serdes](4_schemas_and_serdes.md) to serialize richer payloads safely.
