@@ -27,7 +27,7 @@ fun main() {
     env.config.disableClosureCleaner()
 
     val source = FlinkExerciseHelpers.kafkaSource(groupId = "flink-workshop-counts")
-
+/*
     val orders = env.fromSource(
         source,
         WatermarkStrategy.noWatermarks(),
@@ -37,11 +37,14 @@ fun main() {
         // Hint: this should look identical to the parsing logic from step 2.
     }
 
+
+ */
+/*
     val statusCounts = orders
         // TODO: key by status, window for 30 seconds, and emit a descriptive string per window.
         // Suggested flow: keyBy -> window(TumblingProcessingTimeWindows.of(Time.seconds(30))) -> aggregate/process.
         // Remember to include window start/end in your output so the timing is obvious.
-
+*/
     // TODO: print the aggregated strings and execute the job.
     // Tip: expect the first window to fire ~30 seconds after starting if you read only new data.
 }

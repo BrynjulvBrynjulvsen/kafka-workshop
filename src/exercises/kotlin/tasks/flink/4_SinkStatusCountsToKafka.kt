@@ -28,7 +28,7 @@ fun main() {
     env.config.disableClosureCleaner()
 
     val source = FlinkExerciseHelpers.kafkaSource(groupId = "flink-workshop-sink")
-
+/*
     val statusCounts = env.fromSource(
         source,
         WatermarkStrategy.noWatermarks(),
@@ -44,6 +44,8 @@ fun main() {
         topic = "flink-aggregates",
         valueSerializer = SimpleStringSchema(),
     )
+
+ */
 
     // TODO: send the aggregated results to Kafka and execute the job.
     // Tip: after calling env.execute(...), tail `flink-aggregates` to confirm messages land there.

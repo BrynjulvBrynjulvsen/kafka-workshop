@@ -33,6 +33,8 @@ support. It integrates cleanly with Kafka through dedicated connectors. The modu
 
 You will find small helper utilities under [`src/exercises/kotlin/tasks/flink/FlinkExerciseHelpers.kt`](../src/exercises/kotlin/tasks/flink/FlinkExerciseHelpers.kt) so we can focus on Flink’s concepts instead of repetitive connector plumbing.
 
+Operationally, Flink runs as a separate cluster (Standalone, Kubernetes, Yarn, etc.) that manages task slots, checkpoints, and state backends for you. The workshop jobs run locally, but production deployments typically rely on external storage (S3/GCS/HDFS) for checkpoints/savepoints and a resource manager for scaling. Keep that mental model handy when comparing it with Kafka Streams’ in-process model.
+
 ## Hands-on path
 
 ### Quick API crib sheet

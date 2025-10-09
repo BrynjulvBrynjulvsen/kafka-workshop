@@ -26,7 +26,7 @@ fun main() {
     env.config.disableClosureCleaner()
 
     val source = FlinkExerciseHelpers.kafkaSource(groupId = "flink-workshop-parse")
-
+/*
     val orders = env.fromSource(
         source,
         WatermarkStrategy.noWatermarks(),
@@ -37,12 +37,14 @@ fun main() {
     }
         .name("parse-workshop-orders")
 
+ */
+/*
     val summaries = orders.map { order ->
         // TODO: turn the structured order into a short descriptive string (or use FlinkExerciseHelpers.formatOrderSummary).
         // Hint: include key fields like customer, status, region so you can eyeball the result.
         TODO("format the order for display")
     }
-
+*/
     // TODO: print the summaries and execute the job.
     // Tip: reuse `stream.print()` plus `env.execute(...)` from step 1.
 }
