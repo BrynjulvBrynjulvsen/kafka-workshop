@@ -55,8 +55,8 @@ Stop them again with `docker compose ... down` so they do not consume resources 
 * Bash
 
 ## Workshop Roadmap
-| # | Module | Focus for newcomers | Kotlin entry point |
-| - | - | - | - |
+| # | Module | Focus for newcomers                   | Kotlin entry point |
+| - | - |---------------------------------------| - |
 | 1 | [Producers and consumers](exercises/1_producers_and_consumers.md) | Basic produce/poll/commit flow and CLI inspection | `src/exercises/kotlin/tasks/basics` |
 | 2 | [Consumer groups](exercises/2_kafka-consumer-groups.md) | Coordinated consumption and offset management | `src/exercises/kotlin/tasks/consumergroups` |
 | 3 | [Partitions and ordering](exercises/3_partitions_and_ordering.md) | Keys, ordering guarantees and horizontal scaling | `src/exercises/kotlin/tasks/partitions` |
@@ -65,5 +65,7 @@ Stop them again with `docker compose ... down` so they do not consume resources 
 | 6 | [Kafka Connect](exercises/6_kafka_connect.md) | Declarative data movement with Kafka Connect | `kafkaconnect_solution/` |
 | 7 | [Spring Kafka using Spring Boot](exercises/7_spring_boot.md) | Applying Kafka concepts inside Spring Boot | `src/main/kotlin/io/bekk` |
 | 8 | [Apache Flink](exercises/8_apache_flink.md) | Stateful stream processing with Apache Flink | `src/exercises/kotlin/tasks/flink` |
+| 9 | [Kafka Streams](exercises/9_kafka_streams.md) | Embedded stream processing with the Kafka Streams DSL | `src/exercises/kotlin/tasks/kafkastreams` |
+
 
 Work through the modules in order if you're new to Kafka, as each one builds on the ideas established earlier. Once setup is complete, dive into the exercise guides linked above for detailed steps, console explorations and Kotlin TODOs.
