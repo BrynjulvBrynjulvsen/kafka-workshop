@@ -35,7 +35,7 @@
    ```bash
    kafka-console-consumer --bootstrap-server kafka1:9092 --from-beginning --topic hello-world
    ```
-   If you omit `--from-beginning`, the consumer starts at the latest offset and shows nothing for historical data—this is the first gotcha many new users hit.
+   If you omit `--from-beginning`, the consumer starts at the latest offset and shows nothing for historical data - this is the first gotcha many new users hit.
 
    _Checkpoint_: You should see the messages you produced. Use `Ctrl+C` to stop.
 
@@ -64,7 +64,7 @@ Starter clients live in [`src/exercises/kotlin/tasks/BarebonesKafkaClients.kt`](
 | Basic consumer | [`basics/2_CreateConsumer.kt`](../src/exercises/kotlin/tasks/basics/2_CreateConsumer.kt) | Follow the pattern `subscribe(listOf(Constants.TOPIC_NAME))` → `poll(Duration.ofSeconds(1))` (waits up to one second) → process records → `commitSync()`. Auto-commit is disabled in the helper to make this explicit. | Produce a message, run the class, and ensure it prints the record. Rerun without new messages to confirm the committed offsets prevent duplicates. |
 | Long-running consumer | [`basics/3_LongRunningConsumer.kt`](../src/exercises/kotlin/tasks/basics/3_LongRunningConsumer.kt) | Keep the subscribe → poll → commit loop inside `while (true)` and log keys/values so you see live updates. | Let it run while you publish messages via the console producer; new records should appear immediately. |
 
-Need inspiration or to check your work? Suggested solutions sit under `src/exercises/kotlin/tasks/basics/suggestedSolutions/`—peek only after trying.
+Need inspiration or to check your work? Suggested solutions sit under `src/exercises/kotlin/tasks/basics/suggestedSolutions/` - peek only after trying.
 
 ## Next steps
-When you can reliably produce and consume data—both via CLI and code—you’re ready to explore how consumer groups coordinate work in [exercise 2](2_kafka-consumer-groups.md).
+When you can reliably produce and consume data - both via CLI and code - you’re ready to explore how consumer groups coordinate work in [exercise 2](2_kafka-consumer-groups.md).

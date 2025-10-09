@@ -27,7 +27,7 @@ kafka-configs --alter --entity-type topics --entity-name log-compact-example \
   --add-config 'max.compaction.lag.ms=100,min.cleanable.dirty.ratio=0.0,segment.ms=100,delete.retention.ms=100' \
   --bootstrap-server kafka1:9092
 ```
-> These values force compaction to run quickly for demonstration purposes, at the cost of terrible performance—do not copy them to real clusters.
+> These values force compaction to run quickly for demonstration purposes, at the cost of terrible performance - do not copy them to real clusters.
 
 ### 2. Produce and compact in Kotlin
 - File: [`src/exercises/kotlin/tasks/cleanup/1_logCompaction.kt`](../src/exercises/kotlin/tasks/cleanup/1_logCompaction.kt).
@@ -36,7 +36,7 @@ kafka-configs --alter --entity-type topics --entity-name log-compact-example \
   - In `readQueueFromStart()`, create a consumer with `offsetConfig = "earliest"`, call `seekToBeginning`, and print records so you can compare before/after compaction. After the initial read, send one extra message with the same key to trigger a new segment and allow compaction to complete.
 - **Verify**:
   - Run `./gradlew runKotlinClass -PmainClass=tasks.cleanup._1_logCompactionKt`.
-  - You should see many messages produced, then—after waiting—only the latest value (or two) when reading from the consumer. Re-run to confirm older values no longer appear.
+  - You should see many messages produced, then - after waiting - only the latest value (or two) when reading from the consumer. Re-run to confirm older values no longer appear.
 
 ### 3. Observe from the CLI (optional)
 - Consume from the start with the console consumer and note that only late messages remain:
@@ -48,11 +48,11 @@ kafka-configs --alter --entity-type topics --entity-name log-compact-example \
   echo "my-fancy-key:" | kafka-console-producer --bootstrap-server kafka1:9092 \
     --topic log-compact-example --property "parse.key=true" --property "key.separator=:"
   ```
-  Wait a few seconds and re-consume—the key should disappear after compaction.
+  Wait a few seconds and re-consume - the key should disappear after compaction.
 
 ## Troubleshooting tips
 - **Compaction seems to do nothing**: ensure the extra message after the waiting period is produced; compaction checks only run when new segments roll.
-- **Console consumer shows old data**: allow more time—compaction is asynchronous. You can also reduce the wait times even further in the topic config if necessary.
+- **Console consumer shows old data**: allow more time - compaction is asynchronous. You can also reduce the wait times even further in the topic config if necessary.
 - **`Topic with this name already exists`**: delete the topic with `kafka-topics --delete --topic log-compact-example ...` or pick a new topic name; recreating lets you rerun the experiment from scratch.
 
 ## What’s next?

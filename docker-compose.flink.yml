@@ -1,0 +1,47 @@
+services:
+  flink-jobmanager:
+    build:
+      context: .
+      dockerfile: docker/flink/Dockerfile
+      args:
+        FLINK_VERSION: "1.20.0"
+        FLINK_CONNECTOR_KAFKA_VERSION: "3.4.0-1.20"
+    image: kafka-workshop-flink:1.20.0
+    hostname: flink-jobmanager
+    container_name: flink-jobmanager
+    command: jobmanager
+    ports:
+      - "8081:8081"
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      - |
+        FLINK_PROPERTIES=
+          jobmanager.rpc.address: flink-jobmanager
+          rest.bind-address: 0.0.0.0
+          rest.port: 8081
+    depends_on:
+      - kafka1
+      - schemaregistry1
+    networks:
+      - kafkaworkshop
+
+  flink-taskmanager:
+    image: kafka-workshop-flink:1.20.0
+    hostname: flink-taskmanager
+    container_name: flink-taskmanager
+    command: taskmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      - |
+        FLINK_PROPERTIES=
+          jobmanager.rpc.address: flink-jobmanager
+          taskmanager.numberOfTaskSlots: 4
+    depends_on:
+      - flink-jobmanager
+    networks:
+      - kafkaworkshop
+
+networks:
+  kafkaworkshop:
+    external: true
+    name: kafkaworkshop

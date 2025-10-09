@@ -13,7 +13,7 @@
 
 ## Concept refresh
 - Kafka guarantees ordering _within_ a partition; adding partitions increases throughput but requires careful key usage.
-- When a consumer joins or leaves a group, Kafka rebalances assignments—expect a short pause while this happens.
+- When a consumer joins or leaves a group, Kafka rebalances assignments - expect a short pause while this happens.
 
 ## Guided exercise
 
@@ -50,7 +50,7 @@
 
 ## Troubleshooting tips
 - **Messages appear out of order**: confirm you used consistent keys; without a key, Kafka hashes the serialized value which scatters related records.
-- **Only one consumer receives data**: check the topic’s partition count—parallelism requires as many partitions as active consumers.
+- **Only one consumer receives data**: check the topic’s partition count - parallelism requires as many partitions as active consumers.
 - **Consumer stops receiving**: rebalancing may still be in progress. Allow a few seconds, or print logs when `pauseRendezvous`/`resumeRendezvous` fire if using helpers.
 
 ## What’s next?

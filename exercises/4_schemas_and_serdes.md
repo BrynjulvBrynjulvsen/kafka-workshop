@@ -21,7 +21,7 @@
   - Commit offsets (`commitAsync()` is fine) so rerunning skips already processed records.
 - **Verify**:
   - Run `./gradlew runKotlinClass -PmainClass=tasks.serdes._1_serialization_deserializationKt`.
-  - You should see log lines containing `WorkshopStatusMessage(...)`. Use the CLI consumer without schema support to confirm it prints encoded bytes—an illustration of why serdes matter.
+  - You should see log lines containing `WorkshopStatusMessage(...)`. Use the CLI consumer without schema support to confirm it prints encoded bytes - an illustration of why serdes matter.
 
 ### 2. Inspect the schema registry
 > These commands use the schema registry running at `http://localhost:8085` (forwarded from the Docker container).

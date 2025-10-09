@@ -24,7 +24,7 @@ Keep those two responsibilities in mind as you work through the exercises.
 - **What to implement**: subscribe to `Constants.TOPIC_NAME`, poll in a loop, print each record, and call `commitSync()` (or `commitAsync()`) once you finish a batch. Break out when the poll returns no records so the program exits cleanly.
 - **Why commit?**: committing writes the latest processed offset to Kafka’s internal `__consumer_offsets` topic so reruns (or other group members) resume where you stopped.
 - **Commit choices**: `commitSync()` blocks until the broker confirms the write (safer, slower); `commitAsync()` returns immediately (faster, but you may want error handling if the commit fails).
-- **Verify**: Run `./gradlew runKotlinClass -PmainClass=tasks.consumergroups._2_OffsetCommittingKt`. After it processes the backlog, rerun the class without producing new records—no messages should print the second time. Optionally confirm the stored offset via `kafka-consumer-groups --describe --group offset-commit-group`.
+- **Verify**: Run `./gradlew runKotlinClass -PmainClass=tasks.consumergroups._2_OffsetCommittingKt`. After it processes the backlog, rerun the class without producing new records - no messages should print the second time. Optionally confirm the stored offset via `kafka-consumer-groups --describe --group offset-commit-group`.
 
 ### 2. Explore group assignments with code
 - Kotlin scaffolding: [`src/exercises/kotlin/tasks/consumergroups/1_MultiMemberConsumerGroup.kt`](../src/exercises/kotlin/tasks/consumergroups/1_MultiMemberConsumerGroup.kt).
@@ -33,8 +33,8 @@ Keep those two responsibilities in mind as you work through the exercises.
   val producer = ContinuousProducer(Constants.PARTITIONED_TOPIC) { "key" to "value" }
   producer.resume()
   ```
-- **Execution model**: the provided scaffold spins up every consumer within the same `main` function—run the Gradle task once and let it log in the foreground while you observe.
-- **What to watch**: Only one consumer receives data per partition. If your topic has a single partition, the other consumers remain idle—try `partitioned-topic` which has multiple partitions.
+- **Execution model**: the provided scaffold spins up every consumer within the same `main` function - run the Gradle task once and let it log in the foreground while you observe.
+- **What to watch**: Only one consumer receives data per partition. If your topic has a single partition, the other consumers remain idle - try `partitioned-topic` which has multiple partitions.
 - **Verify**: Run `./gradlew runKotlinClass -PmainClass=tasks.consumergroups._1_MultiMemberConsumerGroupKt` and, in parallel, execute `docker compose exec kafka1 kafka-consumer-groups --bootstrap-server kafka1:9092 --describe --group <your-group>` to see partition assignments and lag.
 
 ## Console drills with `kafka-consumer-groups`
@@ -92,7 +92,7 @@ Let it process a few messages, then stop with `Ctrl+C`.
 ### Troubleshooting tips
 - **Lag never decreases**: confirm your consumers are committing offsets; otherwise the group will appear perpetually behind. Remember that the barebones consumer disables auto-commit.
 - **Reset command complains about active members**: stop your code/CLI consumers or wait for them to time out (`session.timeout.ms`).
-- **Describe output shows `-` for consumer-id**: the group has no active members—start a consumer and watch the table refresh.
+- **Describe output shows `-` for consumer-id**: the group has no active members - start a consumer and watch the table refresh.
 
 ## Ready for more?
 Once you understand how partitions get balanced across a group, jump to [partitions and ordering](3_partitions_and_ordering.md) to control how keys influence that balancing.
