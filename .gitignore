@@ -11,6 +11,7 @@
 !/helm/charts/common-*.tgz
 # Ignore Gradle project-specific cache directory
 .gradle
+.gradle-work
 
 /src/exercises/kotlin/tasks/Secrets.kt
 

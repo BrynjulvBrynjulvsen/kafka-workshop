@@ -35,6 +35,18 @@ Some later exercises demonstrate Avro-aware CLI consumption using [`kcat`](https
 
 Verify the install with `kcat -V`. You can skip this if you prefer to rely solely on the provided Kotlin code and Kafka console clients.
 
+### Optional services: Flink
+The Apache Flink exercises rely on a lightweight Flink jobmanager/taskmanager duo. A custom image baked from the official `flink:1.20.0-scala_2.12-java17` base is used so the Kafka connector jars (`flink-connector-kafka:3.4.0-1.20`) are pre-installed (and the build works on both Intel and Apple Silicon).
+
+Build and start them only when needed:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.flink.yml build
+docker compose -f docker-compose.yml -f docker-compose.flink.yml up -d flink-jobmanager flink-taskmanager
+```
+
+Stop them again with `docker compose ... down` so they do not consume resources once you finish the module.
+
 ## Prerequisites
 * Docker
   * Alternatively, a locally installed and configured Kafka + schema registry

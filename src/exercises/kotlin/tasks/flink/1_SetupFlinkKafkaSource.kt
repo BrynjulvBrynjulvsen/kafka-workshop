@@ -3,42 +3,40 @@
 package tasks.flink
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.serialization.SimpleStringSchema
-import org.apache.flink.connector.kafka.source.KafkaSource
-import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import tasks.Constants
 
-// Bootstrap the Flink streaming environment and tail a Kafka topic using the new KafkaSource API.
+// Step 1/4 – Connect to Kafka and peek at the raw events.
 //
-// Goal: configure a source that reads plain string payloads from `Constants.PARTITIONED_TOPIC` and
-// forward the records to a simple print sink so you can validate that the job wiring works.
+// Goal: stand up the smallest possible Flink job that tails `partitioned-topic` and dumps the
+// payloads to stdout. Seeing the live stream helps anchor the rest of the module.
 //
 // Suggested steps:
-// 1. Build a KafkaSource configured with the workshop broker (`localhost:9094` on the host)
-//    and a group id dedicated to this exercise (e.g. "flink-workshop"). Start from the provided builder.
-// 2. Use `OffsetsInitializer.earliest()` so the job replays existing backlog.
-// 3. Create a DataStream by calling `env.fromSource(...)` with a `WatermarkStrategy.noWatermarks()`
-//    since these events don't rely on event time yet.
-// 4. Route the stream to `print()` to confirm the job consumes data.
-// 5. Call `env.execute(...)` when you're ready to run the pipeline.
+// 1. Grab a `StreamExecutionEnvironment` (done for you).
+// 2. Build a Kafka source either manually or via `FlinkExerciseHelpers.kafkaSource(...)`.
+// 3. Feed the source into `env.fromSource(...)` using `WatermarkStrategy.noWatermarks()`.
+// 4. Call `print()` so you can inspect the incoming strings.
+// 5. Finish with `env.execute("...description...")`.
+//
+// TODO diagram: "Flink job with a single source operator printing to the console" – a simple box
+// for Kafka flowing into a Flink source box, then into a console icon helps newcomers visualise the runtime.
 //
 // Execute with:
 // ./gradlew runKotlinClass -PmainClass=tasks.flink._1_SetupFlinkKafkaSourceKt
 fun main() {
     val env = StreamExecutionEnvironment.getExecutionEnvironment()
 
-    val sourceBuilder = KafkaSource.builder<String>()
-        // TODO: set bootstrap servers, topics, group id and choose an offsets initializer
-        // .setBootstrapServers("localhost:9094")
-        // .setTopics(Constants.PARTITIONED_TOPIC)
-        // .setGroupId("flink-workshop")
-        // .setStartingOffsets(OffsetsInitializer.earliest())
-        // .setValueOnlyDeserializer(SimpleStringSchema())
+    // TODO: create a Kafka source that reads from partitioned-topic (use a distinct group id).
+    val source = FlinkExerciseHelpers.kafkaSource(groupId = "flink-workshop")
 
-    // val source = sourceBuilder.build()
-    // val stream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "partitioned-topic-source")
-    // stream.print()
+    val stream = env.fromSource(
+        source,
+        WatermarkStrategy.noWatermarks(),
+        "partitioned-topic-source",
+    )
 
-    // env.execute("Inspect partitioned-topic via Flink")
+    // TODO: print the raw payloads so you can observe the stream.
+    // Tip: `stream.print()` routes each message to stdout so you can sanity-check connectivity.
+
+    // TODO: start the job with env.execute("Inspect partitioned-topic via Flink")
+    // Tip: give the execution a descriptive name so you recognise it if you open the Flink Web UI.
 }

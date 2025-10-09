@@ -17,7 +17,7 @@ fun main() {
 
     Runtime.getRuntime().addShutdownHook(Thread { producer.close() })
 
-    println("Seeding ${topic} with synthetic orders for the Flink workshop. Press Ctrl+C to stop.")
+    println("Seeding $topic with synthetic orders for the Flink workshop. Press Ctrl+C to stop.")
 
     var counter = 0
     while (true) {
@@ -27,7 +27,7 @@ fun main() {
         val amount = String.format("%.2f", random.nextDouble(15.0, 325.0))
         val timestamp = Instant.now().toString()
 
-        val value = "customer=${customerId},status=${status},region=${region},amount=${amount},ts=${timestamp}"
+        val value = "customer=$customerId,status=$status,region=$region,amount=$amount,ts=$timestamp"
         val record = ProducerRecord(topic, customerId, value)
 
         producer.send(record) { _, exception ->
@@ -38,7 +38,7 @@ fun main() {
 
         counter++
         if (counter % 50 == 0) {
-            println("Produced ${counter} sample records to ${topic}...")
+            println("Produced $counter sample records to $topic...")
         }
 
         Thread.sleep(250)

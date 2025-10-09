@@ -1,34 +1,28 @@
-package tasks.flink.suggestedSolutions
+package tasks.flink
 
-import org.apache.flink.api.common.functions.AggregateFunction
-import org.apache.flink.api.common.functions.FlatMapFunction
-import org.apache.flink.api.common.functions.MapFunction
-import org.apache.flink.api.common.serialization.DeserializationSchema
 import java.io.Serializable
+import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.serialization.SerializationSchema
 import org.apache.flink.connector.base.DeliveryGuarantee
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema
 import org.apache.flink.connector.kafka.sink.KafkaSink
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
-import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow
-import org.apache.flink.util.Collector
-import tasks.Constants
 import java.time.Instant
-import java.util.Properties
 
-object FlinkHelpers {
+/**
+ * Convenience helpers that keep the exercises focused on Flink concepts rather than connector boilerplate.
+ */
+object FlinkExerciseHelpers {
 
     fun kafkaSource(
         groupId: String,
-        //You can set this to earliest to get immediate results - the first window will then include historical data on the topic
-        offsets: OffsetsInitializer = OffsetsInitializer.latest(),
+        offsets: OffsetsInitializer = OffsetsInitializer.earliest(),
         valueDeserializer: DeserializationSchema<String> = org.apache.flink.api.common.serialization.SimpleStringSchema(),
     ): KafkaSource<String> =
         KafkaSource.builder<String>()
             .setBootstrapServers("localhost:9094")
-            .setTopics(Constants.PARTITIONED_TOPIC)
+            .setTopics(tasks.Constants.PARTITIONED_TOPIC)
             .setGroupId(groupId)
             .setStartingOffsets(offsets)
             .setValueOnlyDeserializer(valueDeserializer)
@@ -46,17 +40,11 @@ object FlinkHelpers {
                     .setValueSerializationSchema(valueSerializer)
                     .build(),
             )
-            .setKafkaProducerConfig(
-                // Not something to do in production, but makes the workshop less complicated
-                Properties().apply { setProperty("allow.auto.create.topics", "true") }
-            )
             .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
             .build()
 
-    val orderExtractor: FlatMapFunction<String, WorkshopOrder> = WorkshopOrderExtractor
-    val statusCountAggregate: AggregateFunction<WorkshopOrder, Long, Long> = WorkshopStatusCountAggregate
-    val statusWindowFormatter: ProcessWindowFunction<Long, String, String, TimeWindow> = WorkshopStatusWindowFormatter
-    val orderSummaryMapper: MapFunction<WorkshopOrder, String> = WorkshopOrderSummaryMapper
+    fun formatOrderSummary(order: WorkshopOrder): String =
+        "${order.customerId} -> ${order.status} (${order.region}) amount=${String.format("%.2f", order.amount)}"
 }
 
 class WorkshopOrder() : Serializable {
@@ -97,36 +85,4 @@ fun parseWorkshopOrder(raw: String): WorkshopOrder? {
     val timestampMillis = fields["ts"]?.let { Instant.parse(it).toEpochMilli() } ?: System.currentTimeMillis()
 
     return WorkshopOrder(customer, status, region, amount, timestampMillis)
-}
-
-object WorkshopOrderExtractor : FlatMapFunction<String, WorkshopOrder> {
-    override fun flatMap(value: String, out: Collector<WorkshopOrder>) {
-        parseWorkshopOrder(value)?.let(out::collect)
-    }
-}
-
-object WorkshopStatusCountAggregate : AggregateFunction<WorkshopOrder, Long, Long> {
-    override fun createAccumulator(): Long = 0L
-    override fun add(value: WorkshopOrder, accumulator: Long): Long = accumulator + 1
-    override fun getResult(accumulator: Long): Long = accumulator
-    override fun merge(a: Long, b: Long): Long = a + b
-}
-
-object WorkshopOrderSummaryMapper : MapFunction<WorkshopOrder, String> {
-    override fun map(value: WorkshopOrder): String =
-        "${value.customerId} -> ${value.status} (${value.region}) amount=${String.format("%.2f", value.amount)}"
-}
-
-object WorkshopStatusWindowFormatter : ProcessWindowFunction<Long, String, String, TimeWindow>() {
-    override fun process(
-        key: String,
-        context: Context,
-        elements: Iterable<Long>,
-        out: Collector<String>,
-    ) {
-        val count = elements.firstOrNull() ?: 0L
-        val windowStart = Instant.ofEpochMilli(context.window().start)
-        val windowEnd = Instant.ofEpochMilli(context.window().end)
-        out.collect("status=$key,count=$count,windowStart=$windowStart,windowEnd=$windowEnd")
-    }
 }

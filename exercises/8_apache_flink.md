@@ -3,9 +3,9 @@
 > Bring Kafka streams into Flink for stateful processing and sink the results back to Kafka.
 
 ## Learning goals
-- Spin up a standalone Flink DataStream job from Kotlin using the new Kafka source and sink connectors.
-- Enrich and aggregate Kafka events with keyed streams and tumbling windows.
-- Push transformed results back to Kafka so other services can consume them.
+- Spin up a standalone Flink DataStream job from Kotlin using the Kafka source and sink connectors.
+- Understand how Flink shapes unbounded streams with keyed tumbling windows.
+- Share the derived metrics so other teams can build on top of the stream results.
 
 ## Before you start
 - Make sure the Kafka stack is running: `docker compose up`.
@@ -14,22 +14,33 @@
   docker compose -f docker-compose.yml -f docker-compose.flink.yml build
   docker compose -f docker-compose.yml -f docker-compose.flink.yml up -d flink-jobmanager flink-taskmanager
   ```
-- The Flink connector image already includes `flink-connector-kafka:3.4.0-1.20`, so the Kafka source/sink works out of the box.
+- The Flink image already includes `flink-connector-kafka:3.4.0-1.20`, so the Kafka source/sink works out of the box.
 - Create workshop topics if you have not run earlier scripts yet: `./exercise_setup/create_topics.sh`.
-- If you skipped the Kafka producer exercises, keep a stream of sample data flowing by running:
+- Skipped the Kafka producer labs? Keep a stream of sample data flowing by running:
   ```bash
   ./gradlew runKotlinClass -PmainClass=tasks.flink._0_SeedFlinkWorkshopDataKt
   ```
-  This helper keeps `partitioned-topic` topped up with synthetic order events shaped like `customer=customer-042,status=SHIPPED,region=eu-west,amount=88.40,ts=2024-05-23T12:34:56Z`.
+  The helper keeps `partitioned-topic` topped up with synthetic orders shaped like
+  `customer=customer-042,status=SHIPPED,region=eu-west,amount=88.40,ts=2024-05-23T12:34:56Z`.
 
 ## Why Flink?
 Flink is a distributed stream-processing engine that excels at low-latency, stateful computations with strong event-time
-support. It integrates cleanly with Kafka through dedicated connectors. The exercises below walk through a minimal event pipeline:
-1. Tail Kafka with a Flink `StreamExecutionEnvironment`.
-2. Enrich and aggregate the stream using keyed windows.
-3. Emit the derived metrics back to Kafka.
+support. It integrates cleanly with Kafka through dedicated connectors. The module walks through the pipeline in approachable layers:
+1. Tail Kafka and observe the raw stream.
+2. Parse the payloads into structured orders.
+3. Compute status counts with tumbling windows.
+4. Publish the aggregates back to Kafka for downstream consumers.
+
+You will find small helper utilities under [`src/exercises/kotlin/tasks/flink/FlinkExerciseHelpers.kt`](../src/exercises/kotlin/tasks/flink/FlinkExerciseHelpers.kt) so we can focus on Flink’s concepts instead of repetitive connector plumbing.
 
 ## Hands-on path
+
+### Quick API crib sheet
+- **Flink DataStream basics**: operators like `map`, `flatMap`, and `keyBy` are covered in the [programming model](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/overview/).
+- **Kafka connectors**: the new source/sink builders are documented under [Kafka source](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/) and [Kafka sink](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#kafka-sink).
+- **Windowing**: tumbling, sliding, and session windows are described in the [window guide](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/operators/windows/).
+  Keep the `TumblingProcessingTimeWindows` section handy—you will implement it in step 3.
+
 
 ### 0. Seed sample events (optional but recommended)
 - Kotlin helper: [`src/exercises/kotlin/tasks/flink/0_SeedFlinkWorkshopData.kt`](../src/exercises/kotlin/tasks/flink/0_SeedFlinkWorkshopData.kt).
@@ -37,34 +48,44 @@ support. It integrates cleanly with Kafka through dedicated connectors. The exer
 - **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._0_SeedFlinkWorkshopDataKt`. Leave it running in a separate terminal while you complete the Flink steps.
 - **Verify**: `kafka-console-consumer` or `kcat` should show the synthetic events arriving. Stop the helper with `Ctrl+C` when you are done.
 
-### 1. Wire Flink to Kafka
+### 1. Connect and peek at Kafka
 - Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/1_SetupFlinkKafkaSource.kt`](../src/exercises/kotlin/tasks/flink/1_SetupFlinkKafkaSource.kt).
-- **What to implement**: configure a `KafkaSource<String>` that points to the host-exposed broker (`localhost:9094`), subscribes to `Constants.PARTITIONED_TOPIC`, and starts from `OffsetsInitializer.earliest()`. Feed the source into `env.fromSource(..., WatermarkStrategy.noWatermarks(), "partitioned-topic-source")` and call `print()` so you can confirm the job ingests data.
+- **What to implement**: create a `KafkaSource<String>` (or use `FlinkExerciseHelpers.kafkaSource`) pointed at `localhost:9094` and `partitioned-topic`, feed it into `env.fromSource(..., WatermarkStrategy.noWatermarks(), "partitioned-topic-source")`, and `print()` the results. Don’t forget to call `env.execute(...)` when you’re ready.
+- **Why it matters**: it proves the Flink job can see Kafka, and it gives participants a feel for the raw payloads before any transformation.
 - **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._1_SetupFlinkKafkaSourceKt`.
-- **Verify**: observe the seeded records flowing through your console. If nothing appears, double-check that the seeder (or another producer) is running and that the job connects to `localhost:9094` (not `kafka1:9092`).
+- **TODO diagram**: a simple "Kafka topic ➜ Flink source ➜ console" sketch that signals how the job is wired for this step.
 
-### 2. Add transformations and aggregations
-- Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/2_ProcessAndAggregate.kt`](../src/exercises/kotlin/tasks/flink/2_ProcessAndAggregate.kt).
-- **What to implement**: parse the raw strings into a lightweight event type—splitting on commas and `substringAfter("=")` matches the helper payloads nicely. Use `keyBy` on an attribute (for example, `status` or `region`) and window the stream with `TumblingProcessingTimeWindows.of(Time.seconds(30))`. Use `reduce` or `aggregate` to count events per key per window and emit a descriptive string that includes the window bounds.
-- **Execution time vs event time**: the scaffold starts with processing time windows for simplicity, but you can switch to event time by extracting the `ts` field and assigning watermarks via `WatermarkStrategy.forBoundedOutOfOrderness`.
-- **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._2_ProcessAndAggregateKt`.
-- **Verify**: watch the aggregated output appear twice per minute (for a 30-second window) while your producer keeps feeding the topic.
+### 2. Parse the stream into orders
+- Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/2_ParseWorkshopOrders.kt`](../src/exercises/kotlin/tasks/flink/2_ParseWorkshopOrders.kt).
+- **What to implement**: reuse the source, apply `flatMap` to drop malformed rows and emit `WorkshopOrder` instances via `parseWorkshopOrder`, then format each order into a readable summary string (for example using `FlinkExerciseHelpers.formatOrderSummary`) and `print()` it.
+- **Why it matters**: participants see how easy it is to bring structure to string-based topics, anchoring the domain vocabulary (customer, status, region).
+- **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._2_ParseWorkshopOrdersKt`.
+- **TODO diagram**: show the sample payload broken into labelled fields (customer/status/region/amount/timestamp).
 
-### 3. Sink the results back to Kafka
-- Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/3_WriteAggregatesToKafka.kt`](../src/exercises/kotlin/tasks/flink/3_WriteAggregatesToKafka.kt).
-- **What to implement**: configure a `KafkaSink<String>` with a `SimpleStringSchema` serializer and point it at a dedicated output topic such as `flink-aggregates`. Make sure the topic exists (`kafka-topics --create` if needed). Swap `print()` for `sinkTo(kafkaSink)` so the aggregated strings land in Kafka.
-- **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._3_WriteAggregatesToKafkaKt`.
-- **Verify**: consume the output topic with `docker compose exec kafka1 kafka-console-consumer --bootstrap-server kafka1:9092 --topic flink-aggregates --from-beginning` or `kcat`. You should see one record per window/key combination, e.g. `status=SHIPPED,count=42,windowStart=...`.
+### 3. Count order statuses with tumbling windows
+- Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/3_CountStatusWindows.kt`](../src/exercises/kotlin/tasks/flink/3_CountStatusWindows.kt).
+- **What to implement**: parse the stream as before, then `keyBy` orders by status, apply a `TumblingProcessingTimeWindows.of(Time.seconds(30))`, and produce one summary string per window that includes the status, count, and window bounds. You can reach for `aggregate`, `process`, or `reduce`—pick whichever feels most readable and add logging to verify it fires twice per minute.
+- **Why it matters**: the step introduces stateful computation and the mental model of windows without the extra noise of sinks.
+- **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._3_CountStatusWindowsKt`.
+- **TODO diagram**: timeline showing two adjacent 30-second windows with example statuses falling into each bucket.
+
+### 4. Publish the aggregates back to Kafka
+- Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/4_SinkStatusCountsToKafka.kt`](../src/exercises/kotlin/tasks/flink/4_SinkStatusCountsToKafka.kt).
+- **What to implement**: lift the windowed count pipeline from step 3, but swap `print()` for `sinkTo(FlinkExerciseHelpers.kafkaSink("flink-aggregates"))`. Create the output topic if needed (`kafka-topics --create --topic flink-aggregates --partitions 3 --replication-factor 1`).
+- **Why it matters**: closes the loop—Flink consumes, enriches, and republishes so downstream services or dashboards can subscribe.
+- **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._4_SinkStatusCountsToKafkaKt`.
+- **Verify**: consume the output topic via `docker compose exec kafka1 kafka-console-consumer --bootstrap-server kafka1:9092 --topic flink-aggregates --from-beginning` (or `kcat`) and observe one record per window/key combination.
+- **TODO diagram**: full pipeline view (Kafka orders ➜ Flink job ➜ Kafka aggregates) with example count records.
 
 ## Optional explorations
-- Swap `SimpleStringSchema` for JSON (via your favourite serialization library) so downstream systems can parse structured output.
-- Move to event-time processing by parsing the `ts` field, then experiment with allowing late events via `WatermarkStrategy.withTimestampAssigner` and `allowedLateness`.
-- Try using Flink's Table API or SQL to express the same pipeline as a streaming query.
+- Swap `SimpleStringSchema` for JSON (or Avro) so downstream systems can parse structured output.
+- Switch the window to event time by extracting `WorkshopOrder.timestampMillis`, configuring `WatermarkStrategy.forBoundedOutOfOrderness`, and allowing late events.
+- Enrich the stream with side inputs (e.g., a static region table) or port the job to Flink SQL/Table API to compare ergonomics.
 
 ## Troubleshooting tips
 - **`UnknownHostException: kafka1`**: host-side jobs must connect to `localhost:9094`; the `kafka1` hostname only resolves inside the Docker network.
-- **Deserialization errors**: ensure you pick the correct schema/format—the exercises assume the seeder's comma-delimited payload. If your topic uses Avro, add the appropriate serializer/deserializer from Flink's Confluent adapter or convert the payload before sinking.
-- **No results from the sink**: confirm the window actually fires (enough events arrive within each window) and that your sink builder sets topic, bootstrap servers, and serialization schema.
+- **Deserialization errors**: ensure you keep the payload format as comma-delimited key-value pairs. If you switch to Avro/JSON, update the Flink serializers accordingly.
+- **No results from the sink**: confirm the window fires (enough events arrive within each 30/60 second window) and that the sink is pointed at the correct topic with bootstrap servers set.
 - **Empty input stream**: restart the seeder or point your source to a topic that has traffic, then rerun the job with `OffsetsInitializer.earliest()` so Flink replays the backlog.
 
-Ready to go deeper? Consider deploying the job to a standalone Flink cluster or integrating Savepoints and checkpoints for production-grade reliability.
+Ready to go deeper? Consider deploying the job to a standalone Flink cluster, enabling checkpoints/state backends, or wiring metrics into Grafana.

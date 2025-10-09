@@ -59,5 +59,4 @@ fun main() {
 fun pollAndPrintRecords(consumer: KafkaConsumer<String, String>) {
     // TODO: poll with a short timeout (e.g. Duration.ofMillis(500)) and print topic/partition/offset/value
     val records: ConsumerRecords<String, String>
-    // records.forEach { record -> println("Partition ${record.partition()} -> ${record.value()}") }
 }

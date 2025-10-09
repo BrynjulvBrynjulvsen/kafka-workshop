@@ -4,6 +4,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 val kotlin_version: String by project
 val kafka_version: String by project
 val confluent_version: String by project
+val flink_version: String by project
+val flink_connector_kafka_version: String by project
 
 buildscript {
     val kotlin_version: String by project
@@ -69,6 +71,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
     implementation("org.apache.avro:avro:1.11.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("org.apache.flink:flink-streaming-java:$flink_version")
+    implementation("org.apache.flink:flink-clients:$flink_version")
+    implementation("org.apache.flink:flink-connector-kafka:$flink_connector_kafka_version")
+    implementation("org.apache.flink:flink-connector-base:$flink_version")
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-web")
