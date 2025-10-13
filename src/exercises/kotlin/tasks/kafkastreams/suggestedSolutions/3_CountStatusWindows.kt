@@ -6,6 +6,7 @@ import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.KeyValue
 import org.apache.kafka.streams.kstream.Grouped
+import org.apache.kafka.streams.kstream.Suppressed
 import org.apache.kafka.streams.kstream.TimeWindows
 import tasks.kafkastreams.KafkaStreamsExerciseHelpers
 import tasks.kafkastreams.parseWorkshopOrder
@@ -21,7 +22,7 @@ fun main() {
         .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(30)))
         .count(org.apache.kafka.streams.kstream.Materialized.with(Serdes.String(), Serdes.Long()))
         // If you want to see a single event for each window, you can use suppress
-        //.suppress (Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
+        .suppress (Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
 
     windowedCounts.toStream().peek { windowedKey, count ->
         val window = windowedKey.window()

@@ -18,4 +18,3 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 USER flink
-  docker compose -f docker-compose.yml -f docker-compose.flink.yml up -d flink-jobmanager flink-taskmanager

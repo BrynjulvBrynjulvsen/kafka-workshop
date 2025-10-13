@@ -42,6 +42,7 @@ Build and start them only when needed:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.flink.yml build
+docker network create kafkaworkshop
 docker compose -f docker-compose.yml -f docker-compose.flink.yml up -d flink-jobmanager flink-taskmanager
 ```
 
@@ -50,6 +51,7 @@ Stop them again with `docker compose ... down` so they do not consume resources 
 ## Prerequisites
 * Docker
   * Alternatively, a locally installed and configured Kafka + schema registry
+  * Optional: Pre-pull all workshop container images (including the custom Flink build) ahead of time with `<./exercise_setup/pull_images.sh>`
 * Strongly recommended: An IDE capable of using Gradle and Kotlin
   * A `runKotlinClass` Gradle task is provided as a fallback (see the Quick Start smoke test for an example)
 * Bash
