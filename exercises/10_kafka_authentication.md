@@ -15,10 +15,10 @@
     docker compose \
     -f docker-compose.yml \
     -f docker-compose.scram.yml \
-    up -d kafka1 schemaregistry1
- ```
-  The override adds a `SASL_PLAINTEXT` listener exposed on `localhost:19096`, mounts `conf/kafka_server_jaas.conf` into the broker, and enables Kafka’s `StandardAuthorizer`.
-  Feel free to inspect `conf/kafka_server_jaas.conf`—it declares the `KafkaServer` login context the broker requires in KRaft mode.
+    up -d kafka1 schemaregistry1 
+   ```
+   The override adds a `SASL_PLAINTEXT` listener exposed on `localhost:19096`, mounts `conf/kafka_server_jaas.conf` into the broker, and enables Kafka’s `StandardAuthorizer`.
+   Feel free to inspect `conf/kafka_server_jaas.conf`—it declares the `KafkaServer` login context the broker requires in KRaft mode.
 3. Provision credentials and ACLs:
    ```bash
    ./exercise_setup/create_scram_credentials.sh
