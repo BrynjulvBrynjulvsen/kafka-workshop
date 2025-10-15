@@ -121,3 +121,25 @@ tasks.register<JavaExec>("runKotlinClass") {
     classpath = sourceSets["exercises"].runtimeClasspath
     mainClass.set(project.findProperty("mainClass") as String?)
 }
+
+val flinkShadow by tasks.registering(Jar::class) {
+    group = "distribution"
+    description = "Packages the Flink exercise code into an executable fat jar"
+    archiveClassifier.set("flink-exercises")
+    from(sourceSets["exercises"].output)
+    dependsOn("compileKotlin")
+
+    manifest {
+        attributes["Main-Class"] = "tasks.flink._4_SinkStatusCountsToKafkaKt"
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    val runtimeJars = configurations["runtimeClasspath"].filter { file ->
+        if (!file.name.endsWith(".jar")) return@filter false
+        val name = file.name
+        name != "kafka-clients-${kafka_version}.jar" && !name.startsWith("kafka-streams")
+    }
+
+    from({ runtimeJars.map { zipTree(it) } })
+}

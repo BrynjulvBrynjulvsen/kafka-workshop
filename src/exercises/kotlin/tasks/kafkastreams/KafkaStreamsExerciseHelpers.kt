@@ -20,7 +20,7 @@ object KafkaStreamsExerciseHelpers {
 
     fun baseStreamsConfig(applicationId: String): Properties = Properties().apply {
         put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId)
-        put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9094")
+        put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, tasks.KafkaConfig.bootstrapServers)
         put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().javaClass)
         put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().javaClass)
         put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.AT_LEAST_ONCE)

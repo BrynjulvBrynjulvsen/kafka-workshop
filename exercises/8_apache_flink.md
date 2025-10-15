@@ -52,7 +52,7 @@ Operationally, Flink runs as a separate cluster (Standalone, Kubernetes, Yarn, e
 
 ### 1. Connect and peek at Kafka
 - Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/1_SetupFlinkKafkaSource.kt`](../src/exercises/kotlin/tasks/flink/1_SetupFlinkKafkaSource.kt).
-- **What to implement**: create a `KafkaSource<String>` (or use `FlinkExerciseHelpers.kafkaSource`) pointed at `localhost:9094` and `partitioned-topic`, feed it into `env.fromSource(..., WatermarkStrategy.noWatermarks(), "partitioned-topic-source")`, and `print()` the results. Don’t forget to call `env.execute(...)` when you’re ready.
+- **What to implement**: create a `KafkaSource<String>` (or use `FlinkExerciseHelpers.kafkaSource`) pointed at the workshop brokers (default `localhost:9094`, or `kafka1:9092` when the job runs inside Docker) and `partitioned-topic`, feed it into `env.fromSource(..., WatermarkStrategy.noWatermarks(), "partitioned-topic-source")`, and `print()` the results. Don’t forget to call `env.execute(...)` when you’re ready.
 - **Why it matters**: it proves the Flink job can see Kafka, and it gives participants a feel for the raw payloads before any transformation.
 - **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._1_SetupFlinkKafkaSourceKt`.
 - **TODO diagram**: a simple "Kafka topic ➜ Flink source ➜ console" sketch that signals how the job is wired for this step.
@@ -88,13 +88,27 @@ Operationally, Flink runs as a separate cluster (Standalone, Kubernetes, Yarn, e
 - **Verify**: tail `flink-aggregates-sql` and watch JSON documents with `window_start`, `window_end`, `status`, and `order_count`. Checkpointing helps the Kafka sink flush regularly.
 - **Why bother**: lets participants compare the DataStream pipeline with a SQL/Table interpretation of the same logic.
 
+### Deploy the job to the Flink cluster (optional bonus)
+- Build a fat jar: `./gradlew flinkShadow` (produces `build/libs/kafka-workshop-flink-exercises.jar`).
+- Start the Flink services if needed: `docker compose -f docker-compose.yml -f docker-compose.flink.yml up -d flink-jobmanager flink-taskmanager`.
+- Submit the job to the JobManager via the helper script:
+  ```bash
+  ./exercise_setup/submit_flink_job.sh -c tasks.flink._4_SinkStatusCountsToKafkaKt
+  ```
+  The helper automatically targets the in-network brokers (`kafka1:9092`) unless you override `KAFKA_BOOTSTRAP_SERVERS`.
+  Any additional arguments after the script are forwarded to `flink run`.
+  Use `--` to separate Flink arguments from job-specific parameters.
+  The helper copies the jar into the JobManager container (`/tmp`) before launching the job.
+- Inspect the job via the Web UI (http://localhost:8081) or CLI (`docker compose ... exec flink-jobmanager ./bin/flink list`).
+- Cancel when finished with `docker compose ... exec flink-jobmanager ./bin/flink cancel <jobId>`.
+
 ## Optional explorations
 - Layer additional metrics into the SQL job (e.g., include `region` in the grouping or compute the average order amount per status).
 - Switch the window to event time by extracting `WorkshopOrder.timestampMillis`, configuring `WatermarkStrategy.forBoundedOutOfOrderness`, and allowing late events.
 - Enrich the stream with side inputs (e.g., a static region table) to compare broadcast joins between the DataStream and SQL/Table APIs.
 
 ## Troubleshooting tips
-- **`UnknownHostException: kafka1`**: host-side jobs must connect to `localhost:9094`; the `kafka1` hostname only resolves inside the Docker network.
+- **`UnknownHostException`**: host-side jobs must connect to `localhost:9094`. Jobs running inside Docker should target `kafka1:9092`.
 - **Deserialization errors**: ensure the payload stays valid JSON. If you adjust the schema, update the Flink serializers accordingly.
 - **No results from the sink**: confirm the window fires (enough events arrive within each 30/60 second window) and that the sink is pointed at the correct topic with bootstrap servers set.
 - **Empty input stream**: restart the seeder or point your source to a topic that has traffic, then rerun the job with `OffsetsInitializer.earliest()` so Flink replays the backlog.

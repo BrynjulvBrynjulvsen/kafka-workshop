@@ -26,7 +26,7 @@ fun main() {
         ) WITH (
           'connector' = 'kafka',
           'topic' = '${Constants.PARTITIONED_TOPIC}',
-          'properties.bootstrap.servers' = 'localhost:9094',
+          'properties.bootstrap.servers' = '${tasks.KafkaConfig.bootstrapServers}',
           'properties.group.id' = 'flink-sql-status-counts',
           'properties.auto.offset.reset' = 'earliest',
           'scan.startup.mode' = 'earliest-offset',
@@ -47,7 +47,7 @@ fun main() {
         ) WITH (
           'connector' = 'kafka',
           'topic' = 'flink-aggregates-sql',
-          'properties.bootstrap.servers' = 'localhost:9094',
+          'properties.bootstrap.servers' = '${tasks.KafkaConfig.bootstrapServers}',
           'properties.allow.auto.create.topics' = 'true',
           'value.format' = 'json',
           'value.json.timestamp-format.standard' = 'ISO-8601',

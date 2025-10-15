@@ -11,7 +11,7 @@ fun main() {
     val env = StreamExecutionEnvironment.getExecutionEnvironment()
 
     val source = KafkaSource.builder<String>()
-        .setBootstrapServers("localhost:9094")
+        .setBootstrapServers(tasks.KafkaConfig.bootstrapServers)
         .setTopics(Constants.PARTITIONED_TOPIC)
         .setGroupId("flink-workshop")
         .setStartingOffsets(OffsetsInitializer.earliest())

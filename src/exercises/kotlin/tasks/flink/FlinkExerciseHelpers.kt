@@ -30,7 +30,7 @@ object FlinkExerciseHelpers {
         valueDeserializer: DeserializationSchema<String> = org.apache.flink.api.common.serialization.SimpleStringSchema(),
     ): KafkaSource<String> =
         KafkaSource.builder<String>()
-            .setBootstrapServers("localhost:9094")
+            .setBootstrapServers(tasks.KafkaConfig.bootstrapServers)
             .setTopics(tasks.Constants.PARTITIONED_TOPIC)
             .setGroupId(groupId)
             .setStartingOffsets(offsets)
@@ -42,7 +42,7 @@ object FlinkExerciseHelpers {
         valueSerializer: SerializationSchema<String> = org.apache.flink.api.common.serialization.SimpleStringSchema(),
     ): KafkaSink<String> =
         KafkaSink.builder<String>()
-            .setBootstrapServers("localhost:9094")
+            .setBootstrapServers(tasks.KafkaConfig.bootstrapServers)
             .setRecordSerializer(
                 KafkaRecordSerializationSchema.builder<String>()
                     .setTopic(topic)

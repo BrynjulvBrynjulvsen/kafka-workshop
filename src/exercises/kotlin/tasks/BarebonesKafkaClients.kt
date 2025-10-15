@@ -17,12 +17,11 @@ import kotlin.time.toJavaDuration
 
 object BarebonesKafkaClients {
 
-    private const val BOOTSTRAP_SERVER_URL = "localhost:9094"
     private const val SCHEMA_REGISTRY_URL = "http://localhost:8085"
 
     fun sharedProps(): Map<String, String> {
         return mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to BOOTSTRAP_SERVER_URL,
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to KafkaConfig.bootstrapServers,
             CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "PLAINTEXT",
             AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to SCHEMA_REGISTRY_URL,
         )
