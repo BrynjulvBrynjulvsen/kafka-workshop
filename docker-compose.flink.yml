@@ -41,6 +41,34 @@ services:
     networks:
       - kafkaworkshop
 
+  flink-sql-gateway:
+    image: kafka-workshop-flink:1.20.0
+    container_name: flink-sql-gateway
+    command:
+      - ./bin/sql-gateway.sh
+      - start-foreground
+      - -Dsql-gateway.endpoint.rest.address=0.0.0.0
+      - -Dsql-gateway.endpoint.rest.port=8083
+      - -Ddeployment.target=remote
+      - -Drest.address=flink-jobmanager
+      - -Drest.port=8081
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      - |
+        FLINK_PROPERTIES=
+          jobmanager.rpc.address: flink-jobmanager
+          jobmanager.rpc.port: 6123
+          rest.address: flink-jobmanager
+          rest.port: 8081
+    volumes:
+      - ./conf/sql-gateway.yaml:/opt/flink/conf/sql-gateway-defaults.yaml:ro
+    depends_on:
+      - flink-jobmanager
+    ports:
+      - "8083:8083"
+    networks:
+      - kafkaworkshop
+
 networks:
   kafkaworkshop:
     external: true

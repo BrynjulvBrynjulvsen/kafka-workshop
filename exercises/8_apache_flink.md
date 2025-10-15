@@ -102,6 +102,59 @@ Operationally, Flink runs as a separate cluster (Standalone, Kubernetes, Yarn, e
 - Inspect the job via the Web UI (http://localhost:8081) or CLI (`docker compose ... exec flink-jobmanager ./bin/flink list`).
 - Cancel when finished with `docker compose ... exec flink-jobmanager ./bin/flink cancel <jobId>`.
 
+### Bonus: Run the pipeline with Flink SQL Gateway
+- Launch the SQL Gateway alongside the cluster: `docker compose -f docker-compose.yml -f docker-compose.flink.yml up -d flink-jobmanager flink-taskmanager flink-sql-gateway`.
+- Connect with the bundled SQL client:
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.flink.yml exec flink-sql-gateway ./bin/sql-client.sh --gateway localhost:8083
+  ```
+- In the SQL shell, create source/sink tables and start the query:
+  ```sql
+  CREATE TEMPORARY TABLE orders (
+    customer STRING,
+    status STRING,
+    region STRING,
+    amount DOUBLE,
+    ts STRING,
+    tsMillis BIGINT,
+    proc_time AS PROCTIME()
+  ) WITH (
+    'connector' = 'kafka',
+    'topic' = 'partitioned-topic',
+    'properties.bootstrap.servers' = 'kafka1:9092',
+    'properties.group.id' = 'sql-gateway-example',
+    'properties.auto.offset.reset' = 'latest',
+    'scan.startup.mode' = 'latest-offset',
+    'value.format' = 'json',
+    'value.json.ignore-parse-errors' = 'true'
+  );
+
+  CREATE TABLE flink_aggregates_sql (
+    window_start TIMESTAMP_LTZ(3),
+    window_end TIMESTAMP_LTZ(3),
+    status STRING,
+    order_count BIGINT
+  ) WITH (
+    'connector' = 'kafka',
+    'topic' = 'flink-aggregates-sql',
+    'properties.bootstrap.servers' = 'kafka1:9092',
+    'format' = 'json',
+    'json.timestamp-format.standard' = 'ISO-8601'
+  );
+
+  INSERT INTO flink_aggregates_sql
+  SELECT
+    window_start,
+    window_end,
+    status,
+    COUNT(*) AS order_count
+  FROM TABLE(
+    TUMBLE(TABLE orders, DESCRIPTOR(proc_time), INTERVAL '15' SECOND)
+  )
+  GROUP BY window_start, window_end, status;
+  ```
+- Observe the job in the Flink dashboard or cancel it from the SQL client with `STOP STATEMENT <id>;`.
+
 ## Optional explorations
 - Layer additional metrics into the SQL job (e.g., include `region` in the grouping or compute the average order amount per status).
 - Switch the window to event time by extracting `WorkshopOrder.timestampMillis`, configuring `WatermarkStrategy.forBoundedOutOfOrderness`, and allowing late events.
