@@ -1,4 +1,4 @@
-POST localhost:8083/connectors
+POST localhost:18083/connectors
 Content-Type: application/json
 
 {
@@ -22,8 +22,8 @@ Content-Type: application/json
 }
 
 ###
-GET localhost:8083/connectors/jdbc-sink/status
+GET localhost:18083/connectors/jdbc-sink/status
 
 ###
-DELETE localhost:8083/connectors/jdbc-sink
+DELETE localhost:18083/connectors/jdbc-sink
 

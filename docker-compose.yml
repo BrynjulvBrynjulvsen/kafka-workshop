@@ -1,6 +1,7 @@
 
 networks:
   kafkaworkshop:
+    external: true
     name: kafkaworkshop
 services:
   kafka1:
@@ -44,48 +45,48 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry1
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
-
-  kafka2:
-    image: confluentinc/cp-kafka:7.5.2
-    hostname: kafka2
-    container_name: kafka2
-    environment:
-      KAFKA_LISTENERS: BROKER://kafka2:9092,EXTERNAL://kafka2:9094,CONTROLLER://kafka2:9093
-      KAFKA_ADVERTISED_LISTENERS: BROKER://kafka2:9092,EXTERNAL://localhost:9095
-      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
-      KAFKA_PROCESS_ROLES: 'controller,broker'
-      KAFKA_NODE_ID: 1
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka2:9093'
-      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-      KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry2:8085"
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      CLUSTER_ID: Q4H03G7wR-iEj_VCbvtuYg
-    ports:
-      - "9095:9094"
-    networks:
-      - kafkaworkshop
-    volumes:
-      - kafka2-data:/var/lib/kafka/data
-
-  schemaregistry2:
-    image: confluentinc/cp-schema-registry:7.5.2
-    hostname: schemaregistry2
-    container_name: schemaregistry2
-    restart: always
-    depends_on:
-      - kafka2
-    networks:
-      - kafkaworkshop
-    ports:
-      - "8086:8085"
-    environment:
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka2:9092
-      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
-      SCHEMA_REGISTRY_HOST_NAME: schemaregistry2
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
+#
+#  kafka2:
+#    image: confluentinc/cp-kafka:7.5.2
+#    hostname: kafka2
+#    container_name: kafka2
+#    environment:
+#      KAFKA_LISTENERS: BROKER://kafka2:9092,EXTERNAL://kafka2:9094,CONTROLLER://kafka2:9093
+#      KAFKA_ADVERTISED_LISTENERS: BROKER://kafka2:9092,EXTERNAL://localhost:9095
+#      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+#      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
+#      KAFKA_PROCESS_ROLES: 'controller,broker'
+#      KAFKA_NODE_ID: 1
+#      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka2:9093'
+#      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+#      KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry2:8085"
+#      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#      CLUSTER_ID: Q4H03G7wR-iEj_VCbvtuYg
+#    ports:
+#      - "9095:9094"
+#    networks:
+#      - kafkaworkshop
+#    volumes:
+#      - kafka2-data:/var/lib/kafka/data
+#
+#  schemaregistry2:
+#    image: confluentinc/cp-schema-registry:7.5.2
+#    hostname: schemaregistry2
+#    container_name: schemaregistry2
+#    restart: always
+#    depends_on:
+#      - kafka2
+#    networks:
+#      - kafkaworkshop
+#    ports:
+#      - "8086:8085"
+#    environment:
+#      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka2:9092
+#      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
+#      SCHEMA_REGISTRY_HOST_NAME: schemaregistry2
+#      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
 
   kafkaconnect:
     image: confluentinc/cp-kafka-connect:7.5.2
@@ -93,7 +94,7 @@ services:
     hostname: kafkaconnect
     container_name: kafkaconnect
     ports:
-      - "8083:8083"
+      - "18083:8083"
     volumes:
       - kc-data:/data
     environment:

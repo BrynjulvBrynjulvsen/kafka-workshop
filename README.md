@@ -66,8 +66,10 @@ Stop them again with `docker compose ... down` so they do not consume resources 
 | 5 | [Deletion policy and log compaction](exercises/5_deletion_policy.md) | Kafka retention strategies and compaction behaviour | `src/exercises/kotlin/tasks/cleanup` |
 | 6 | [Kafka Connect](exercises/6_kafka_connect.md) | Declarative data movement with Kafka Connect | `kafkaconnect_solution/` |
 | 7 | [Spring Kafka using Spring Boot](exercises/7_spring_boot.md) | Applying Kafka concepts inside Spring Boot | `src/main/kotlin/io/bekk` |
-| 8 | [Apache Flink](exercises/8_apache_flink.md) | Stateful stream processing with Apache Flink | `src/exercises/kotlin/tasks/flink` |
+| 8 | [Apache Flink](exercises/8_apache_flink.md) | Stateful stream processing with DataStream + SQL Table API | `src/exercises/kotlin/tasks/flink` |
+| 8.5 | [Flink cluster & SQL Gateway](exercises/8_5_flink_cluster.md) | Deploying the workshop pipeline to the standalone cluster & SQL Gateway | `docker-compose.flink.yml`, `exercise_setup/submit_flink_job.sh` |
 | 9 | [Kafka Streams](exercises/9_kafka_streams.md) | Embedded stream processing with the Kafka Streams DSL | `src/exercises/kotlin/tasks/kafkastreams` |
+| 10 | [Authentication and ACLs](exercises/10_kafka_authentication.md) | Enabling SCRAM and controlling access with ACLAuthorizer | `src/exercises/kotlin/tasks/auth` |
 
 
 Work through the modules in order if you're new to Kafka, as each one builds on the ideas established earlier. Once setup is complete, dive into the exercise guides linked above for detailed steps, console explorations and Kotlin TODOs.
