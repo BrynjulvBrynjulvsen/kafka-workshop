@@ -34,9 +34,9 @@ plugins {
     application
 }
 
-application {
+/*application {
     mainClass.value("_1_MultiMemberConsumerGroupKt")
-}
+}*/
 
 val jar by tasks.getting(Jar::class) {
     manifest {

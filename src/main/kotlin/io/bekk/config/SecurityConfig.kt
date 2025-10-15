@@ -11,7 +11,8 @@ import org.springframework.security.web.SecurityFilterChain
 @EnableWebSecurity
 class SecurityConfig {
 
-    // Allowing everything. Not for any kind of production use, obviously.
+    // Workshop shortcut: disable every guard so participants can focus on Kafka.
+    // Never ship this configuration in production—lock down the filter chain instead.
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.authorizeHttpRequests{

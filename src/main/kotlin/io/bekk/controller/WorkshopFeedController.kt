@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RestController
-import java.util.*
+import java.util.UUID
 
 @RestController
 class WorkshopFeedController(
@@ -36,7 +36,7 @@ class WorkshopFeedController(
 
     @PutMapping("/hello-world/{message}")
     fun putHelloWorldFeed(@PathVariable message: String): ResponseEntity<String> {
-        producer.send("hello-world", UUID.randomUUID().toString(), message)
+        producer.sendPlainText("hello-world", UUID.randomUUID().toString(), message)
         return ResponseEntity.ok("Posted")
     }
 

@@ -1,6 +1,7 @@
 package io.bekk.repository
 
 import io.bekk.publisher.WorkshopStatusMessage
+import java.util.concurrent.CopyOnWriteArrayList
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.handler.annotation.Header
@@ -10,10 +11,24 @@ import org.springframework.stereotype.Repository
 @Repository
 class FeedRepository {
 
-    var statusFeed = listOf<WorkshopStatusMessageConsumerRecord>()
-    var helloWorldFeed = listOf<ConsumerRecordWithStringValue>()
+    private val statusFeedStore = CopyOnWriteArrayList<WorkshopStatusMessageConsumerRecord>()
+    private val helloWorldFeedStore = CopyOnWriteArrayList<ConsumerRecordWithStringValue>()
 
-    @KafkaListener(topics = [feedTopic], containerFactory = "listenerFactory", groupId = "#{T(java.util.UUID).randomUUID().toString()}")
+    val statusFeed: List<WorkshopStatusMessageConsumerRecord>
+        get() = statusFeedStore.toList()
+
+    val helloWorldFeed: List<ConsumerRecordWithStringValue>
+        get() = helloWorldFeedStore.toList()
+
+    /**
+     * Each listener instance uses a random group id so they do not interfere with the Kotlin workshop code.
+     * This is convenient for demos but real services should pick a stable group id.
+     */
+    @KafkaListener(
+        topics = [feedTopic],
+        containerFactory = "avroListenerFactory",
+        groupId = "#{T(java.util.UUID).randomUUID().toString()}"
+    )
     fun receiveStatusFeedRecord(
         @Header(KafkaHeaders.RECEIVED_KEY) key: String,
         @Header(KafkaHeaders.RECEIVED_PARTITION) partition: Int,
@@ -22,17 +37,17 @@ class FeedRepository {
         @Header(KafkaHeaders.GROUP_ID) groupId: String,
         @Payload record: WorkshopStatusMessage
     ) {
-        statusFeed = statusFeed.takeLast(50).plus(
+        statusFeedStore.add(
             WorkshopStatusMessageConsumerRecord(
-                feedTopic,
-                partition,
-                offset,
-                timestamp,
-                key,
-                WorkshopStatusMessageData(record.message)
+                topicName = feedTopic,
+                partition = partition,
+                offset = offset,
+                timestamp = timestamp,
+                key = key,
+                value = WorkshopStatusMessageData(record.message),
             )
         )
-
+        trim(statusFeedStore)
     }
 
     @KafkaListener(topics = ["hello-world"], containerFactory = "stringListenerFactory", groupId = "#{T(java.util.UUID).randomUUID().toString()}")
@@ -44,21 +59,28 @@ class FeedRepository {
         @Header(KafkaHeaders.GROUP_ID) groupId: String,
         @Payload record: String
     ) {
-        helloWorldFeed = helloWorldFeed.takeLast(50).plus(
+        helloWorldFeedStore.add(
             ConsumerRecordWithStringValue(
-                "hello-world",
-                partition,
-                offset,
-                timestamp,
-                key,
-                record
+                topicName = "hello-world",
+                partition = partition,
+                offset = offset,
+                timestamp = timestamp,
+                key = key,
+                value = record,
             )
         )
-
+        trim(helloWorldFeedStore)
     }
 
     companion object {
         const val feedTopic = "workshop-status-message"
+        private const val MAX_ENTRIES = 50
+
+        private fun <T> trim(store: CopyOnWriteArrayList<T>) {
+            while (store.size > MAX_ENTRIES) {
+                store.removeAt(0)
+            }
+        }
     }
 }
 
