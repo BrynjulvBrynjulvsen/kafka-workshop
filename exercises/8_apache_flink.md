@@ -55,21 +55,20 @@ Operationally, Flink runs as a separate cluster (Standalone, Kubernetes, Yarn, e
 - **What to implement**: create a `KafkaSource<String>` (or use `FlinkExerciseHelpers.kafkaSource`) pointed at the workshop brokers (default `localhost:9094`, or `kafka1:9092` when the job runs inside Docker) and `partitioned-topic`, feed it into `env.fromSource(..., WatermarkStrategy.noWatermarks(), "partitioned-topic-source")`, and `print()` the results. Don’t forget to call `env.execute(...)` when you’re ready.
 - **Why it matters**: it proves the Flink job can see Kafka, and it gives participants a feel for the raw payloads before any transformation.
 - **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._1_SetupFlinkKafkaSourceKt`.
-- **TODO diagram**: a simple "Kafka topic ➜ Flink source ➜ console" sketch that signals how the job is wired for this step.
+![](media/simple-flink-source.png)
 
 ### 2. Parse the stream into orders
 - Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/2_ParseWorkshopOrders.kt`](../src/exercises/kotlin/tasks/flink/2_ParseWorkshopOrders.kt).
-- **What to implement**: reuse the source, apply `flatMap` to drop malformed rows and emit `WorkshopOrder` instances via `parseWorkshopOrder`, then format each order into a readable summary string (for example using `FlinkExerciseHelpers.formatOrderSummary`) and `print()` it.
-- **Why it matters**: participants see how easy it is to bring structure to string-based topics, anchoring the domain vocabulary (customer, status, region).
+- **What to implement**: reuse the source, apply `flatMap` to decode the JSON payloads into `WorkshopOrder` instances (`parseWorkshopOrder`), drop malformed rows, then format each order into a readable summary string (for example using `FlinkExerciseHelpers.formatOrderSummary`) and `print()` it.
+- **Why it matters**: reinforces how to turn raw JSON strings into domain objects, making the fields (customer, status, region, amount, timestamps) concrete before introducing stateful operators.
 - **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._2_ParseWorkshopOrdersKt`.
-- **TODO diagram**: show the sample payload broken into labelled fields (customer/status/region/amount/timestamp).
+![the sample payload broken into labelled fields (customer/status/region/amount/timestamp).](media/flink-mapping.png)
 
 ### 3. Count order statuses with tumbling windows
 - Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/3_CountStatusWindows.kt`](../src/exercises/kotlin/tasks/flink/3_CountStatusWindows.kt).
 - **What to implement**: parse the stream as before, then `keyBy` orders by status, apply a `TumblingProcessingTimeWindows.of(Time.seconds(30))`, and produce one summary string per window that includes the status, count, and window bounds. You can reach for `aggregate`, `process`, or `reduce`—pick whichever feels most readable and add logging to verify it fires twice per minute.
 - **Why it matters**: the step introduces stateful computation and the mental model of windows without the extra noise of sinks.
 - **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._3_CountStatusWindowsKt`.
-- **TODO diagram**: timeline showing two adjacent 30-second windows with example statuses falling into each bucket.
 
 ### 4. Publish the aggregates back to Kafka
 - Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/4_SinkStatusCountsToKafka.kt`](../src/exercises/kotlin/tasks/flink/4_SinkStatusCountsToKafka.kt).
@@ -77,7 +76,8 @@ Operationally, Flink runs as a separate cluster (Standalone, Kubernetes, Yarn, e
 - **Why it matters**: closes the loop—Flink consumes, enriches, and republishes so downstream services or dashboards can subscribe.
 - **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._4_SinkStatusCountsToKafkaKt`.
 - **Verify**: consume the output topic via `docker compose exec kafka1 kafka-console-consumer --bootstrap-server kafka1:9092 --topic flink-aggregates --from-beginning` (or `kcat`) and observe one record per window/key combination.
-- **TODO diagram**: full pipeline view (Kafka orders ➜ Flink job ➜ Kafka aggregates) with example count records.
+  ![timeline showing two adjacent 30-second windows with example statuses falling into each bucket](media/flink-count.png)
+
 
 - Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/5_StatusCountsWithSql.kt`](../src/exercises/kotlin/tasks/flink/5_StatusCountsWithSql.kt).
 - **What to implement**: register Kafka source and sink tables, then express the tumbling window aggregation purely in SQL and insert the results into `flink-aggregates-sql`.
