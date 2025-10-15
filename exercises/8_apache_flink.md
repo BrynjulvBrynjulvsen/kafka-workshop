@@ -21,7 +21,7 @@
   ./gradlew runKotlinClass -PmainClass=tasks.flink._0_SeedFlinkWorkshopDataKt
   ```
   The helper keeps `partitioned-topic` topped up with synthetic orders shaped like
-  `customer=customer-042,status=SHIPPED,region=eu-west,amount=88.40,ts=2024-05-23T12:34:56Z`.
+  `{"customer":"customer-042","status":"SHIPPED","region":"eu-west","amount":88.40,"ts":"2024-05-23T12:34:56Z","tsMillis":1716467696000}`.
 
 ## Why Flink?
 Flink is a distributed stream-processing engine that excels at low-latency, stateful computations with strong event-time
@@ -79,14 +79,23 @@ Operationally, Flink runs as a separate cluster (Standalone, Kubernetes, Yarn, e
 - **Verify**: consume the output topic via `docker compose exec kafka1 kafka-console-consumer --bootstrap-server kafka1:9092 --topic flink-aggregates --from-beginning` (or `kcat`) and observe one record per window/key combination.
 - **TODO diagram**: full pipeline view (Kafka orders ➜ Flink job ➜ Kafka aggregates) with example count records.
 
+- Kotlin scaffold: [`src/exercises/kotlin/tasks/flink/5_StatusCountsWithSql.kt`](../src/exercises/kotlin/tasks/flink/5_StatusCountsWithSql.kt).
+- **What to implement**: register Kafka source and sink tables, then express the tumbling window aggregation purely in SQL and insert the results into `flink-aggregates-sql`.
+- **Tips**:
+  - Add `proc_time AS PROCTIME()` to the source table and use it in the `TUMBLE(TABLE …, DESCRIPTOR(proc_time), …)` descriptor.
+  - Use the `'value.format' = 'json'` family of options so the Table API can (de)serialize payloads, and enable auto topic creation if desired.
+- **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.flink._5_StatusCountsWithSqlKt`.
+- **Verify**: tail `flink-aggregates-sql` and watch JSON documents with `window_start`, `window_end`, `status`, and `order_count`. Checkpointing helps the Kafka sink flush regularly.
+- **Why bother**: lets participants compare the DataStream pipeline with a SQL/Table interpretation of the same logic.
+
 ## Optional explorations
-- Swap `SimpleStringSchema` for JSON (or Avro) so downstream systems can parse structured output.
+- Layer additional metrics into the SQL job (e.g., include `region` in the grouping or compute the average order amount per status).
 - Switch the window to event time by extracting `WorkshopOrder.timestampMillis`, configuring `WatermarkStrategy.forBoundedOutOfOrderness`, and allowing late events.
-- Enrich the stream with side inputs (e.g., a static region table) or port the job to Flink SQL/Table API to compare ergonomics.
+- Enrich the stream with side inputs (e.g., a static region table) to compare broadcast joins between the DataStream and SQL/Table APIs.
 
 ## Troubleshooting tips
 - **`UnknownHostException: kafka1`**: host-side jobs must connect to `localhost:9094`; the `kafka1` hostname only resolves inside the Docker network.
-- **Deserialization errors**: ensure you keep the payload format as comma-delimited key-value pairs. If you switch to Avro/JSON, update the Flink serializers accordingly.
+- **Deserialization errors**: ensure the payload stays valid JSON. If you adjust the schema, update the Flink serializers accordingly.
 - **No results from the sink**: confirm the window fires (enough events arrive within each 30/60 second window) and that the sink is pointed at the correct topic with bootstrap servers set.
 - **Empty input stream**: restart the seeder or point your source to a topic that has traffic, then rerun the job with `OffsetsInitializer.earliest()` so Flink replays the backlog.
 

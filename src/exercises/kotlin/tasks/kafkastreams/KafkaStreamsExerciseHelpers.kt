@@ -1,5 +1,12 @@
 package tasks.kafkastreams
 
+import java.util.Locale
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.StreamsConfig
 import tasks.Constants
@@ -27,8 +34,10 @@ object KafkaStreamsExerciseHelpers {
     const val aggregatesTopic: String = "kstreams-aggregates"
 
     fun formatOrderSummary(order: WorkshopOrder): String =
-        "${order.customerId} -> ${order.status} (${order.region}) amount=${String.format("%.2f", order.amount)}"
+        "${order.customerId} -> ${order.status} (${order.region}) amount=${String.format(Locale.US, "%.2f", order.amount)}"
 }
+
+private val json = Json { ignoreUnknownKeys = true }
 
 data class WorkshopOrder(
     val customerId: String,
@@ -39,19 +48,16 @@ data class WorkshopOrder(
 )
 
 fun parseWorkshopOrder(raw: String): WorkshopOrder? {
-    val fields = raw.split(",").mapNotNull { assignment ->
-        val parts = assignment.split("=", limit = 2)
-        if (parts.size < 2) return@mapNotNull null
-        val key = parts[0].trim()
-        val value = parts[1].trim()
-        key to value
-    }.toMap()
+    val jsonElement = runCatching { json.parseToJsonElement(raw).jsonObject }.getOrElse { return null }
 
-    val status = fields["status"]?.takeIf { it.isNotEmpty() } ?: return null
-    val customer = fields["customer"] ?: "unknown"
-    val region = fields["region"] ?: "unknown"
-    val amount = fields["amount"]?.toDoubleOrNull() ?: 0.0
-    val timestampMillis = fields["ts"]?.let { Instant.parse(it).toEpochMilli() } ?: System.currentTimeMillis()
+    val status = jsonElement["status"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
+    val customer = jsonElement["customer"]?.jsonPrimitive?.contentOrNull ?: "unknown"
+    val region = jsonElement["region"]?.jsonPrimitive?.contentOrNull ?: "unknown"
+    val amount = jsonElement["amount"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+    val timestampMillis = jsonElement["tsMillis"]?.jsonPrimitive?.longOrNull
+        ?: jsonElement["ts"]?.jsonPrimitive?.contentOrNull
+            ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }
+        ?: System.currentTimeMillis()
 
     return WorkshopOrder(customer, status, region, amount, timestampMillis)
 }

@@ -11,6 +11,7 @@ import org.apache.kafka.streams.kstream.TimeWindows
 import org.apache.kafka.streams.kstream.WindowedSerdes
 import tasks.kafkastreams.KafkaStreamsExerciseHelpers
 import tasks.kafkastreams.parseWorkshopOrder
+import kotlin.time.Duration.Companion.seconds
 
 fun main() {
     val builder = StreamsBuilder()
@@ -33,7 +34,7 @@ fun main() {
     formatted.to(
         KafkaStreamsExerciseHelpers.aggregatesTopic,
         Produced.with(
-            WindowedSerdes.timeWindowedSerdeFrom(String::class.java, Duration.ofSeconds(60).toMillis()),
+            WindowedSerdes.timeWindowedSerdeFrom(String::class.java, 60.seconds.inWholeMilliseconds),
             Serdes.String(),
         ),
     )

@@ -3,8 +3,15 @@ package tasks.flink.suggestedSolutions
 import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.common.functions.MapFunction
-import org.apache.flink.api.common.serialization.DeserializationSchema
 import java.io.Serializable
+import java.util.Locale
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
+import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.serialization.SerializationSchema
 import org.apache.flink.connector.base.DeliveryGuarantee
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema
@@ -81,20 +88,19 @@ class WorkshopOrder() : Serializable {
     }
 }
 
-fun parseWorkshopOrder(raw: String): WorkshopOrder? {
-    val fields = raw.split(",").mapNotNull { assignment ->
-        val parts = assignment.split("=", limit = 2)
-        if (parts.size < 2) return@mapNotNull null
-        val key = parts[0].trim()
-        val value = parts[1].trim()
-        key to value
-    }.toMap()
+private val json = Json { ignoreUnknownKeys = true }
 
-    val status = fields["status"]?.takeIf { it.isNotEmpty() } ?: return null
-    val customer = fields["customer"] ?: "unknown"
-    val region = fields["region"] ?: "unknown"
-    val amount = fields["amount"]?.toDoubleOrNull() ?: 0.0
-    val timestampMillis = fields["ts"]?.let { Instant.parse(it).toEpochMilli() } ?: System.currentTimeMillis()
+fun parseWorkshopOrder(raw: String): WorkshopOrder? {
+    val jsonObject = runCatching { json.parseToJsonElement(raw).jsonObject }.getOrElse { return null }
+
+    val status = jsonObject["status"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
+    val customer = jsonObject["customer"]?.jsonPrimitive?.contentOrNull ?: "unknown"
+    val region = jsonObject["region"]?.jsonPrimitive?.contentOrNull ?: "unknown"
+    val amount = jsonObject["amount"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+    val timestampMillis = jsonObject["tsMillis"]?.jsonPrimitive?.longOrNull
+        ?: jsonObject["ts"]?.jsonPrimitive?.contentOrNull
+            ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }
+        ?: System.currentTimeMillis()
 
     return WorkshopOrder(customer, status, region, amount, timestampMillis)
 }
@@ -114,7 +120,7 @@ object WorkshopStatusCountAggregate : AggregateFunction<WorkshopOrder, Long, Lon
 
 object WorkshopOrderSummaryMapper : MapFunction<WorkshopOrder, String> {
     override fun map(value: WorkshopOrder): String =
-        "${value.customerId} -> ${value.status} (${value.region}) amount=${String.format("%.2f", value.amount)}"
+        "${value.customerId} -> ${value.status} (${value.region}) amount=${String.format(Locale.US, "%.2f", value.amount)}"
 }
 
 object WorkshopStatusWindowFormatter : ProcessWindowFunction<Long, String, String, TimeWindow>() {

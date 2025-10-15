@@ -3,7 +3,8 @@ package tasks.flink.suggestedSolutions
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows
-import org.apache.flink.streaming.api.windowing.time.Time
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 fun main() {
     val env = StreamExecutionEnvironment.getExecutionEnvironment()
@@ -18,7 +19,7 @@ fun main() {
     )
         .flatMap(FlinkHelpers.orderExtractor)
         .keyBy { order -> order.status }
-        .window(TumblingProcessingTimeWindows.of(Time.seconds(30)))
+        .window(TumblingProcessingTimeWindows.of(30.seconds.toJavaDuration()))
         .aggregate(FlinkHelpers.statusCountAggregate, FlinkHelpers.statusWindowFormatter)
         .print()
 

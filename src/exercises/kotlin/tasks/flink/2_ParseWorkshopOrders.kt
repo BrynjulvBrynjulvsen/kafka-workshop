@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 
 // Step 2/4 – Parse the strings into something meaningful.
 //
-// Goal: turn the raw comma-delimited payloads into the `WorkshopOrder` data class so we can inspect
+// Goal: turn the raw JSON payloads into the `WorkshopOrder` data class so we can inspect
 // individual fields (status, region, amount) and build intuition for the downstream aggregations.
 //
 // Suggested steps:

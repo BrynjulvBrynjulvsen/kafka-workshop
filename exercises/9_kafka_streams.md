@@ -11,7 +11,7 @@
 - Ensure the Kafka stack is running: `docker compose up`.
 - Seed topics if needed: `./exercise_setup/create_topics.sh`.
 - Keep the optional Flink/Kafka tooling running if you already started it; Streams can coexist just fine.
-- Need data? Reuse the Flink seeder: `./gradlew runKotlinClass -PmainClass=tasks.flink._0_SeedFlinkWorkshopDataKt` to produce synthetic orders into `partitioned-topic`.
+- Need data? Reuse the Flink seeder: `./gradlew runKotlinClass -PmainClass=tasks.flink._0_SeedFlinkWorkshopDataKt` to produce synthetic JSON orders (e.g. `{"customer":"customer-042","status":"SHIPPED","region":"eu-west","amount":88.40,"ts":"2024-05-23T12:34:56Z","tsMillis":1716467696000}`) into `partitioned-topic`.
 
 ## Why Kafka Streams?
 Kafka Streams is a lightweight library for building streaming microservices directly on top of Kafka. The API lets you describe dataflows with builders, stream processors, and stateful aggregations. Compared with Flink, Streams runs in-process with your application (no external cluster) and trades some of Flink's advanced runtime features for a lighter operational footprint. This module mirrors the Flink track so participants can compare ergonomics and concepts across the two frameworks:
@@ -43,7 +43,7 @@ Use these differences to discuss when to pick Streams (tight coupling to an exis
 
 ### 2. Parse workshop orders
 - Kotlin scaffold: [`src/exercises/kotlin/tasks/kafkastreams/2_ParseWorkshopOrders.kt`](../src/exercises/kotlin/tasks/kafkastreams/2_ParseWorkshopOrders.kt).
-- **What to implement**: use `parseWorkshopOrder` to convert strings to `WorkshopOrder`, filter out nulls, map to readable summary strings, and log them.
+- **What to implement**: use `parseWorkshopOrder` to convert the JSON payloads into `WorkshopOrder`, filter out nulls, map to readable summary strings, and log them.
 - **Run it**: `./gradlew runKotlinClass -PmainClass=tasks.kafkastreams._2_ParseWorkshopOrdersKt`.
 - **Verify**: summaries should mirror the structure used in the Flink module (customer -> status, region, amount).
 
@@ -60,7 +60,7 @@ Use these differences to discuss when to pick Streams (tight coupling to an exis
 - **Verify**: consume the topic with `docker compose exec kafka1 kafka-console-consumer --bootstrap-server kafka1:9092 --topic kstreams-aggregates --from-beginning` (or `kcat`).
 
 ## Optional explorations
-- Compare processing time (default) vs. event time by adding a custom timestamp extractor that uses the `ts` field.
+- Compare processing time (default) vs. event time by adding a custom timestamp extractor that uses the `tsMillis` field.
 - Write the aggregates as JSON using your serializer of choice for friendlier downstream consumption.
 - Add a branching step to split orders by region and produce separate aggregates per geography.
 

@@ -10,6 +10,8 @@ import org.apache.kafka.streams.kstream.Suppressed
 import org.apache.kafka.streams.kstream.TimeWindows
 import tasks.kafkastreams.KafkaStreamsExerciseHelpers
 import tasks.kafkastreams.parseWorkshopOrder
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 fun main() {
     val builder = StreamsBuilder()
@@ -19,7 +21,7 @@ fun main() {
             parseWorkshopOrder(value)?.let { listOf(KeyValue(it.status, 1L)) } ?: emptyList()
         }
         .groupByKey(Grouped.with(Serdes.String(), Serdes.Long()))
-        .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(30)))
+        .windowedBy(TimeWindows.ofSizeWithNoGrace(30.seconds.toJavaDuration()))
         .count(org.apache.kafka.streams.kstream.Materialized.with(Serdes.String(), Serdes.Long()))
         // If you want to see a single event for each window, you can use suppress
         .suppress (Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))

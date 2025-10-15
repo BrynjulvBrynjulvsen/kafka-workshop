@@ -1,10 +1,25 @@
 package tasks.flink
 
+import java.time.Instant
+import kotlin.random.Random
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
 import org.apache.kafka.clients.producer.ProducerRecord
 import tasks.BarebonesKafkaClients
 import tasks.Constants
-import java.time.Instant
-import kotlin.random.Random
+
+@Serializable
+private data class WorkshopOrderPayload(
+    val customer: String,
+    val status: String,
+    val region: String,
+    val amount: Double,
+    val ts: String,
+    val tsMillis: Long,
+)
+
+private val json = Json { encodeDefaults = true }
 
 // Produce a steady stream of workshop-friendly events into the partitioned topic so the Flink
 // exercises have data even if earlier Kafka labs were skipped.
@@ -24,10 +39,19 @@ fun main() {
         val customerId = "customer-%03d".format(random.nextInt(1, 500))
         val status = statuses.random(random)
         val region = regions.random(random)
-        val amount = String.format("%.2f", random.nextDouble(15.0, 325.0))
-        val timestamp = Instant.now().toString()
+        val amount = random.nextDouble(15.0, 325.0)
+        val eventInstant = Instant.now()
+        val timestamp = eventInstant.toString()
 
-        val value = "customer=$customerId,status=$status,region=$region,amount=$amount,ts=$timestamp"
+        val payload = WorkshopOrderPayload(
+            customer = customerId,
+            status = status,
+            region = region,
+            amount = amount,
+            ts = timestamp,
+            tsMillis = eventInstant.toEpochMilli(),
+        )
+        val value = json.encodeToString(payload)
         val record = ProducerRecord(topic, customerId, value)
 
         producer.send(record) { _, exception ->

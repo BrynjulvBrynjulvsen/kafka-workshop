@@ -7,7 +7,7 @@ import org.apache.kafka.streams.StreamsBuilder
 
 // Step 2/4 – Parse the raw strings into structured workshop orders.
 //
-// Goal: convert the incoming values to `WorkshopOrder`, drop malformed records, and emit readable summaries.
+// Goal: convert the JSON values to `WorkshopOrder`, drop malformed records, and emit readable summaries.
 //
 // Suggested steps:
 // 1. Reuse the source stream from step 1.

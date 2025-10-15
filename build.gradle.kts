@@ -75,6 +75,10 @@ dependencies {
     implementation("org.apache.flink:flink-clients:$flink_version")
     implementation("org.apache.flink:flink-connector-kafka:$flink_connector_kafka_version")
     implementation("org.apache.flink:flink-connector-base:$flink_version")
+    implementation("org.apache.flink:flink-table-api-java-bridge:$flink_version")
+    implementation("org.apache.flink:flink-table-runtime:$flink_version")
+    implementation("org.apache.flink:flink-table-planner-loader:$flink_version")
+    implementation("org.apache.flink:flink-json:$flink_version")
     implementation("org.apache.kafka:kafka-streams:$kafka_version")
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
