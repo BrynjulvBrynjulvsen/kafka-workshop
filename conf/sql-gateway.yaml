@@ -1,0 +1,13 @@
+sql-gateway.session.idle-timeout: 1 h
+
+sql-gateway.endpoint.rest.address: 0.0.0.0
+sql-gateway.endpoint.rest.port: 8083
+
+execution.planner: blink
+execution.type: stream
+execution.result-mode: table
+
+deployment.target: remote
+
+rest.address: flink-jobmanager
+rest.port: 8081
