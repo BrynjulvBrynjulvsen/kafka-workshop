@@ -12,7 +12,7 @@
    ```
 2. Bring up the broker with the SCRAM-enabled override:
    ```bash
- docker compose \
+    docker compose \
     -f docker-compose.yml \
     -f docker-compose.scram.yml \
     up -d kafka1 schemaregistry1
