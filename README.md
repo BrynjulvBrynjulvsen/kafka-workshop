@@ -1,9 +1,6 @@
 # Kafka-workshop
 
-This workshop seeks to instill a basic working knowledge of Kafka in a few hours' worth of practice. You can expect
-to have a basic grasp of consumers, consumer groups, partitioning, schemas and cleanup policies by the time you
-make it through the exercises provided. You will also pick up useful Kafka CLI commands, and there are optional
-Spring Boot exercises if you want to try Kafka inside a full framework.
+This workshop takes you from Kafka fundamentals to production-adjacent scenarios in a few focused hours. By the end you will have implemented producers, consumers, consumer groups, partitioning strategies, schema-aware serdes, cleanup policies, Kafka Connect integration, Spring Boot messaging, stream processing with both Kafka Streams and Apache Flink, plus optional security labs using SCRAM. Along the way you will drill Kafka CLI tooling so the operational concepts stick.
 
 ## Quick Start
 1. **Start the local stack**

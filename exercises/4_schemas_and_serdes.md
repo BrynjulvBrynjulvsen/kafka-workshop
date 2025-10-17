@@ -67,7 +67,8 @@ The `-r` flag points to the schema registry and `-s value=avro` tells `kcat` to 
 ## Troubleshooting tips
 - **`ClassNotFoundException` for Avro classes**: re-run `./gradlew generateAvroJava` and ensure your IDE includes the generated sources.
 - **`io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Unauthorized`**: make sure you are pointing to `http://localhost:8085` (no auth required in this setup).
-- **Consumer fails with `Unknown magic byte`**: you attempted to consume Avro data with a plain string deserializer. Switch to the Avro consumer or use `kcat` with `-s value=avro`.
+- **Consumer fails with `Unknown magic byte`**: you pointed an Avro deserializer at data that was written as plain strings (or any non-Confluent Avro format). Either produce using the Avro serializer or swap back to the string deserializer for that topic.
+- **Output looks like gibberish**: you consumed Avro-encoded bytes with the plain string deserializer. Switch to the Avro consumer helper or a tool like `kcat -s value=avro` so the schema registry can translate the payload.
 
 ## Looking ahead
 With schemas under control, you can explore storage behaviour in [exercise 5](5_deletion_policy.md) or build connectors in exercise 6 later on.

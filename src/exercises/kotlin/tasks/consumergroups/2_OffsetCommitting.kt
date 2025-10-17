@@ -22,7 +22,6 @@ fun main() {
         while (true) {
             // Step 1: poll for records (e.g. Duration.ofSeconds(1)). Break out when the batch is empty.
             // val records = consumer.poll(Duration.ofSeconds(1))
-            // if (records.isEmpty) break
 
             // Step 2: print topic, partition, offset, and value for each record.
 
