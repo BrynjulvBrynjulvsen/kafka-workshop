@@ -5,7 +5,7 @@ networks:
     name: kafkaworkshop
 services:
   kafka1:
-    image: confluentinc/cp-kafka:7.5.2
+    image: confluentinc/cp-kafka:7.8.6
     hostname: kafka1
     container_name: kafka1
     environment:
@@ -17,8 +17,7 @@ services:
       KAFKA_PROCESS_ROLES: 'controller,broker'
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093'
-      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-      KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry1:8085"
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data' #if you want a clean startup each time, consider a temporary dir instead, like /tmp/kraft-combined-logs
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       CLUSTER_ID: KUQll_wsRdWF7yPPb85xNA #generated, for example using `docker run -it --rm confluentinc/cp-kafka kafka-storage random-uuid`
@@ -30,7 +29,7 @@ services:
       - kafka1-data:/var/lib/kafka/data
 
   schemaregistry1:
-    image: confluentinc/cp-schema-registry:7.5.2
+    image: confluentinc/cp-schema-registry:7.8.6
     hostname: schemaregistry1
     container_name: schemaregistry1
     restart: always
