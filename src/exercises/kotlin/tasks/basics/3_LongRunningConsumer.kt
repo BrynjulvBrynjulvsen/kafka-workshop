@@ -17,11 +17,11 @@ fun main() {
         consumer.subscribe(listOf(Constants.TOPIC_NAME))
         while (true) {
             // Step 1: Poll for records (short timeout) and iterate through them
-            // val records = consumer.poll(java.time.Duration.ofMillis(500))
-            // records.forEach { record -> println("${'$'}{record.timestamp()}: ${'$'}{record.value()}") }
+             val records = consumer.poll(java.time.Duration.ofMillis(500))
+             records.forEach { record -> println("${record.timestamp()}: ${record.value()}") }
 
             // Step 2: Commit offsets so rebalances do not replay processed records continuously
-            // consumer.commitSync()
+             consumer.commitSync()
 
             // Step 3: Consider sleeping briefly to avoid a tight loop when no data arrives
             // Thread.sleep(200)
